@@ -1,0 +1,21 @@
+{
+  "name": "dealscout-server",
+  "version": "1.0.0",
+  "description": "DealScout — real marketplace deal scanner. Scores live listings from eBay, Vinted, Gumtree, Shpock and Facebook Marketplace against a live value band.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "postinstall": "node -e \"console.log('DealScout installed. Copy .env.example to .env, add your eBay keys, then: npm start')\""
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "express": "^4.21.2"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.48.0"
+  },
+  "license": "MIT"
+}

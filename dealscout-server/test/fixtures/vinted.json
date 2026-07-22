@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "id": 2201,
+      "title": "Dunk Low Panda UK9",
+      "brand_title": "Nike",
+      "price": { "amount": "62.00", "currency_code": "GBP" },
+      "url": "https://www.vinted.co.uk/items/2201-nike-dunk-low-panda",
+      "photo": { "url": "https://images.vinted.net/2201.jpg" },
+      "status": "Very good",
+      "favourite_count": 24,
+      "user": { "login": "soleandco" }
+    },
+    {
+      "id": 2202,
+      "title": "Nike Dunk Low Panda size 9 mens",
+      "brand_title": "Nike",
+      "price": "78.0",
+      "url": "https://www.vinted.co.uk/items/2202",
+      "photo": { "url": "https://images.vinted.net/2202.jpg" },
+      "status": "New with tags",
+      "favourite_count": 8,
+      "user": { "login": "kickvault" }
+    },
+    {
+      "id": 2203,
+      "title": "Dunk Low Panda 9",
+      "brand_title": "Nike",
+      "price": { "amount": "70.00", "currency_code": "GBP" },
+      "url": "https://www.vinted.co.uk/items/2203",
+      "status": "Good",
+      "favourite_count": 3,
+      "user": { "login": "trainerhut" }
+    },
+    {
+      "id": 2204,
+      "title": "Panda Dunks UK 9",
+      "brand_title": "Nike",
+      "price": { "amount": "85.00", "currency_code": "GBP" },
+      "url": "https://www.vinted.co.uk/items/2204",
+      "photo": { "url": "https://images.vinted.net/2204.jpg" },
+      "status": "Very good",
+      "favourite_count": 11,
+      "user": { "login": "soleplug" }
+    }
+  ]
+}

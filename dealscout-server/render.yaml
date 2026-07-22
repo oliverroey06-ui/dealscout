@@ -1,0 +1,23 @@
+# One-click deploy to Render (https://render.com). Push this repo to GitHub,
+# then Render → New → Blueprint → pick the repo. Add your eBay keys as
+# environment variables in the dashboard (they are marked sync:false so they
+# are never committed).
+services:
+  - type: web
+    name: dealscout
+    runtime: node
+    plan: starter            # free/low tier; bump if you scan a lot
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: EBAY_CLIENT_ID
+        sync: false
+      - key: EBAY_CLIENT_SECRET
+        sync: false
+      - key: EBAY_MARKETPLACE
+        value: EBAY_GB
+      - key: SOURCES
+        value: ebay,vinted,gumtree,shpock
+      - key: NODE_VERSION
+        value: "20"
