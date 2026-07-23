@@ -107,7 +107,7 @@ a{color:inherit}
 .price{font-family:var(--mono);font-weight:600;font-size:1.2rem;letter-spacing:-.02em}
 .est{font-family:var(--mono);font-size:.64rem;color:var(--ink-3);line-height:1.5;padding-bottom:2px;min-width:0}
 .gap{margin-left:auto;font-family:var(--mono);font-size:.7rem;font-weight:600;border-radius:var(--r-t);padding:3px 7px;white-space:nowrap;flex:0 0 auto}
-.gap.g{background:var(--good-wash);color:var(--good)}.gap.m{background:var(--warn-wash);color:var(--warn)}.gap.b{background:var(--paper-2);color:var(--ink-3)}
+.gap.g{background:var(--good-wash);color:var(--good)}.gap.m{background:var(--warn-wash);color:var(--warn)}.gap.b{background:var(--paper-2);color:var(--ink-3)}.gap.warn{background:var(--crit-wash);color:var(--crit)}
 .foot{margin-top:11px;padding-top:10px;border-top:1px dashed var(--line-soft);display:flex;align-items:center;gap:10px}
 .dial{position:relative;width:44px;height:44px;flex:0 0 auto}
 .dial svg{transform:rotate(-90deg)}
@@ -344,7 +344,8 @@ function renderStatus(j){
   if(j.band){
     const cur=(state.listings[0]||{}).currency||'GBP';
     const loose=j.band.spreadPct!=null&&j.band.spreadPct>90;
-    bandChip='<span class="bandchip'+(loose?' loose':'')+'" title="'+(loose?'Wide range — your search matched a mix of items. Try a more specific model for a tighter estimate.':'Typical price across the listings in this search')+'">typical '+money(j.band.lo,cur)+'–'+money(j.band.hi,cur)+(loose?' · broad search':'')+'</span>';
+    const rej=j.band.rejected>0?j.band.rejected+' outlier'+(j.band.rejected===1?'':'s')+' excluded. ':'';
+    bandChip='<span class="bandchip'+(loose?' loose':'')+'" title="'+rej+(loose?'Wide range — your search matched a mix of items. Try a more specific model for a tighter estimate.':'The going price across real listings for this search, after removing bundles/mis-listings.')+'">going rate '+money(j.band.lo,cur)+'–'+money(j.band.hi,cur)+(loose?' · broad search':'')+'</span>';
   }
   sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+bandChip+pills+
     '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>';
@@ -373,7 +374,12 @@ function dial(score,big){
   return '<div class="dial '+g+(big?' big':'')+'" role="img" aria-label="Score '+score+'"><svg width="'+box+'" height="'+box+'" viewBox="0 0 '+box+' '+box+'"><circle class="bg" cx="'+box/2+'" cy="'+box/2+'" r="'+r+'" fill="none" stroke-width="'+(big?7:4.5)+'"/><circle class="fg" cx="'+box/2+'" cy="'+box/2+'" r="'+r+'" fill="none" stroke-width="'+(big?7:4.5)+'" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><span class="n">'+score+'</span></div>';
 }
 const gradeCls=s=>s>=82?'strong':s>=68?'good':s>=54?'fair':'weak';
-function gapTag(l){const g=l.valuation.gapPct;if(g==null)return '<span class="gap b">no band</span>';if(g>=12)return '<span class="gap g">'+g+'% under</span>';if(g>=3)return '<span class="gap m">'+g+'% under</span>';if(g>=-3)return '<span class="gap b">at market</span>';return '<span class="gap b">'+Math.abs(g)+'% over</span>';}
+function gapTag(l){const g=l.valuation.gapPct;if(g==null)return '<span class="gap b">no comps</span>';
+  if(g>=70)return '<span class="gap warn" title="Far below the going price — likely a different item, spares/repair, or too good to be true. Check the listing.">verify item</span>';
+  if(g>=12)return '<span class="gap g">'+g+'% under</span>';
+  if(g>=3)return '<span class="gap m">'+g+'% under</span>';
+  if(g>=-3)return '<span class="gap b">at market</span>';
+  return '<span class="gap b">'+Math.abs(g)+'% over</span>';}
 function srcLabel(id){return (state.sources.find(s=>s.id===id)||{}).label||id;}
 // Per-item line: this listing's own £ saving vs the typical price (varies per card),
 // plus postage. Deliberately NOT the shared band range — that shows once up top.

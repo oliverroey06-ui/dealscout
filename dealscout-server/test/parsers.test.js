@@ -89,6 +89,25 @@ test('valuation: band from distribution, gaps and scores', () => {
   assert.equal(cheap.valuation.parts.find(p => p.key === 'gap').measured, true);
 });
 
+test('buildBand rejects silly outliers — £400 controller among £20 ones', () => {
+  const mk = (p) => ({ price: p, currency: 'GBP' });
+  const band = buildBand([15, 18, 18, 20, 20, 22, 22, 24, 25, 28, 30, 400].map(mk));
+  assert.ok(band.mid >= 18 && band.mid <= 28, `going rate should be ~£20, got ${band.mid}`);
+  assert.ok(band.hi < 60, `hi must exclude the £400, got ${band.hi}`);
+  assert.ok(band.rejected >= 1, 'the £400 is counted as an excluded outlier');
+});
+
+test('extreme "under" is scored as suspicious, not the best deal', () => {
+  const listings = [15, 18, 20, 20, 22, 22, 24, 25, 28, 30].map(p => ({ id: 'x' + p, source: 'ebay', title: 'Xbox 360 controller wireless', url: 'https://x/' + p, price: p, currency: 'GBP', image: 'i', condition: 'Used', seller: { name: 's' } }));
+  // a £3 "controller" (really a cable, or a scam) — 87% under the ~£22 going rate
+  listings.push({ id: 'cheap', source: 'ebay', title: 'xbox 360 controller cable only', url: 'https://x/3', price: 3, currency: 'GBP', image: 'i', condition: 'Used', seller: { name: 's' } });
+  const scored = scoreScan(listings);
+  const cheap = scored.find(l => l.id === 'cheap');
+  const fair = scored.find(l => l.id === 'x20');
+  assert.ok(cheap.valuation.gapPct > 70, 'the £3 item reads as far under');
+  assert.ok(cheap.valuation.score < fair.valuation.score, 'but it scores BELOW a fairly-priced one (treated as suspicious)');
+});
+
 test('normalize rejects junk (no price / no url)', () => {
   assert.equal(normalize('ebay', { title: 'x', url: 'u' }), null);
   assert.equal(normalize('ebay', { title: 'x', price: 10 }), null);

@@ -23,22 +23,33 @@ function percentile(sortedAsc, p) {
   return sortedAsc[lo] + (sortedAsc[hi] - sortedAsc[lo]) * (i - lo);
 }
 
-// Build one value band per (source-agnostic) query result set.
+// Build one value band per (source-agnostic) query result set = the real GOING
+// PRICE of the item, not a naive average.
 //
-// A fuzzy marketplace search for "rtx 3080" also returns 3070s, cables, cases and
-// bundles, so a naive percentile over the whole set gives a uselessly wide band.
-// We trim in two passes toward the dominant price cluster: drop the far outliers
-// vs the median, re-centre on the survivors' median, then tighten once more. The
-// result reflects what the item actually goes for, not the full spread.
+// A fuzzy marketplace search for "xbox 360 controller" drags in bundles, job-lots,
+// console+controller sets and the odd £400 mis-listing/scam. A plain percentile
+// lets those high outliers yank the "typical" upward, so a £20 controller reads
+// "£380 under". We reject outliers hard, then take the median of what's left:
+//   1. Tukey fences (1.5×IQR) drop gross outliers — the £400 among £20s.
+//   2. Re-centre on the cleaned median and tighten once more for skew.
+// The survivors are the dense cluster where real listings actually sit.
 export function buildBand(listings) {
   const prices = listings.map(l => toGBP(l)).filter(n => n != null && n > 0).sort((a, b) => a - b);
   if (prices.length < 4) return null; // not enough comps to value against
-  const med = percentile(prices, 0.5);
-  let pop = prices.filter(p => p >= med * 0.5 && p <= med * 1.9);
+
+  // Pass 1 — Tukey's fences on the interquartile range: the classic robust
+  // outlier filter. Kills silly-high listings that inflate the reference.
+  const q1 = percentile(prices, 0.25), q3 = percentile(prices, 0.75), iqr = q3 - q1;
+  const loFence = q1 - 1.5 * iqr, hiFence = q3 + 1.5 * iqr;
+  let pop = prices.filter(p => p >= loFence && p <= hiFence);
   if (pop.length < 4) pop = prices;
-  const med2 = percentile(pop, 0.5);
-  const tight = pop.filter(p => p >= med2 * 0.6 && p <= med2 * 1.6);
+
+  // Pass 2 — re-centre on the cleaned median and tighten (handles skew / bimodal
+  // "controllers vs consoles" splits by keeping the cluster around the median).
+  const med = percentile(pop, 0.5);
+  const tight = pop.filter(p => p >= med * 0.45 && p <= med * 1.9);
   if (tight.length >= 4) pop = tight;
+
   const lo = percentile(pop, 0.30), mid = percentile(pop, 0.50), hi = percentile(pop, 0.70);
   return {
     lo: Math.round(lo),
@@ -46,6 +57,7 @@ export function buildBand(listings) {
     hi: Math.round(hi),
     n: pop.length,
     total: prices.length,
+    rejected: prices.length - pop.length, // outliers excluded — shown in the tooltip
     // % width of the band vs its midpoint — the UI warns when a band is too loose
     // to trust (usually because the search term was broad).
     spreadPct: mid > 0 ? Math.round(((hi - lo) / mid) * 100) : null
@@ -98,8 +110,13 @@ export function scoreListing(l, band, maxEng) {
   const priceGBP = toGBP(l);
   let gapPct = null, gapN = 0.5, gapMeasured = false;
   if (band && band.mid > 0) {
-    gapPct = (band.mid - priceGBP) / band.mid;          // + = under the band
-    gapN = clamp01((gapPct + 0.05) / 0.35);             // -5%..+30% -> 0..1
+    gapPct = (band.mid - priceGBP) / band.mid;          // + = under the going price
+    // Bell-shaped, not monotonic: a good deal is ~15-50% under. Being 80%+ under
+    // the going price is a red flag (wrong item / for-parts / scam), so the score
+    // benefit RISES then FALLS — extreme "under" is treated as suspicious.
+    if (gapPct <= 0.30) gapN = clamp01((gapPct + 0.05) / 0.35);   // -5%..30% -> 0..1
+    else if (gapPct <= 0.55) gapN = 1;                            // the sweet spot
+    else gapN = clamp01(1 - (gapPct - 0.55) / 0.35);            // 55%->1 .. 90%->0 (steep: suspicious)
     gapMeasured = true;
   }
   const seller = sellerSignal(l);
