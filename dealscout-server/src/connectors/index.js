@@ -22,10 +22,14 @@ export function enabledSources(env) {
 
 export function sourceStatus(env) {
   return Object.entries(CONNECTORS).map(([id, c]) => {
-    let ready = true, note = '';
-    if (id === 'ebay' && !(env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET)) { ready = false; note = 'add eBay API keys'; }
-    if (id === 'facebook' && env.FACEBOOK_ENABLED !== '1') { ready = false; note = 'off by default'; }
-    return { id, label: c.meta.label, kind: c.meta.kind, ready, note, enabled: enabledSources(env).includes(id) };
+    let ready = true, note = '', kind = c.meta.kind;
+    if (id === 'ebay') {
+      // eBay is always usable now: official API when keys are set, scrape otherwise.
+      if (env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET) { note = 'official API'; kind = 'api'; }
+      else { note = 'scrape (add keys for API)'; kind = 'scrape'; }
+    }
+    if (id === 'facebook' && env.FACEBOOK_ENABLED !== '1') { ready = false; note = 'needs a logged-in browser (local only)'; }
+    return { id, label: c.meta.label, kind, ready, note, enabled: enabledSources(env).includes(id) };
   });
 }
 

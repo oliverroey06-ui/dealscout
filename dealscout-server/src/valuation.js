@@ -24,19 +24,31 @@ function percentile(sortedAsc, p) {
 }
 
 // Build one value band per (source-agnostic) query result set.
-// Comparable population = all listings in the same scan within a sane price window
-// of the whole set's median, so a single silly outlier can't distort the band.
+//
+// A fuzzy marketplace search for "rtx 3080" also returns 3070s, cables, cases and
+// bundles, so a naive percentile over the whole set gives a uselessly wide band.
+// We trim in two passes toward the dominant price cluster: drop the far outliers
+// vs the median, re-centre on the survivors' median, then tighten once more. The
+// result reflects what the item actually goes for, not the full spread.
 export function buildBand(listings) {
   const prices = listings.map(l => toGBP(l)).filter(n => n != null && n > 0).sort((a, b) => a - b);
   if (prices.length < 4) return null; // not enough comps to value against
   const med = percentile(prices, 0.5);
-  const trimmed = prices.filter(p => p >= med * 0.35 && p <= med * 2.5);
-  const pop = trimmed.length >= 4 ? trimmed : prices;
+  let pop = prices.filter(p => p >= med * 0.5 && p <= med * 1.9);
+  if (pop.length < 4) pop = prices;
+  const med2 = percentile(pop, 0.5);
+  const tight = pop.filter(p => p >= med2 * 0.6 && p <= med2 * 1.6);
+  if (tight.length >= 4) pop = tight;
+  const lo = percentile(pop, 0.30), mid = percentile(pop, 0.50), hi = percentile(pop, 0.70);
   return {
-    lo: percentile(pop, 0.35),
-    mid: percentile(pop, 0.5),
-    hi: percentile(pop, 0.75),
-    n: pop.length
+    lo: Math.round(lo),
+    mid: Math.round(mid),
+    hi: Math.round(hi),
+    n: pop.length,
+    total: prices.length,
+    // % width of the band vs its midpoint — the UI warns when a band is too loose
+    // to trust (usually because the search term was broad).
+    spreadPct: mid > 0 ? Math.round(((hi - lo) / mid) * 100) : null
   };
 }
 

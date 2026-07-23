@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { _mapItemsForTest as mapEbay } from '../src/connectors/ebay.js';
+import { _mapItemsForTest as mapEbay, parseSearch as parseEbaySearch } from '../src/connectors/ebay.js';
 import { _mapItemsForTest as mapVinted } from '../src/connectors/vinted.js';
 import { parse as parseGumtree } from '../src/connectors/gumtree.js';
 import { _mapCardForTest as mapFbCard } from '../src/connectors/facebook.js';
@@ -44,6 +44,18 @@ test('Vinted parser handles both price shapes and builds title', () => {
   assert.equal(items[1].price, 78); // legacy string price
   assert.equal(items[0].engagement.favourites, 24);
   assert.ok(items[0].url.startsWith('https://www.vinted.co.uk/items/'));
+});
+
+test('eBay no-key scraper parses search HTML, skips template + dedups', () => {
+  const items = parseEbaySearch(fx('ebay-search.html'));
+  // 6 <li> but one is "Shop on eBay" template and one is a duplicate URL -> 4 real
+  assert.equal(items.length, 4);
+  assert.ok(items.every(i => i.source === 'ebay' && i.url.includes('/itm/')));
+  const boxed = items.find(i => i.url.endsWith('/itm/1201'));
+  assert.equal(boxed.price, 315);
+  assert.equal(boxed.condition, 'Used');
+  assert.equal(boxed.image, 'https://i.ebayimg.com/1201.jpg');
+  assert.ok(!items.some(i => /Shop on eBay/i.test(i.title)));
 });
 
 test('Gumtree parser extracts cards from server HTML', () => {

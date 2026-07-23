@@ -80,6 +80,8 @@ a{color:inherit}
 .result-read{font-family:var(--mono);font-size:.82rem;color:var(--ink-2)}
 .result-read b{color:var(--ink)}
 .srcpill{font-family:var(--mono);font-size:.7rem;padding:3px 8px;border-radius:var(--r-t);border:1px solid var(--line);color:var(--ink-2)}
+.bandchip{font-family:var(--mono);font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:var(--r-t);background:var(--acc-wash);border:1px solid var(--acc-wash-2);color:var(--acc-deep)}
+.bandchip.loose{background:var(--warn-wash);border-color:transparent;color:var(--warn)}
 .srcpill.ok{background:var(--good-wash);border-color:transparent;color:var(--good)}
 .srcpill.fail{background:var(--crit-wash);border-color:transparent;color:var(--crit)}
 .sortsel{margin-left:auto;height:36px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--card);padding:0 10px;font-size:.85rem}
@@ -338,7 +340,13 @@ function renderStatus(j){
     if(s.ok)return '<span class="srcpill ok" title="'+s.ms+'ms">'+esc(label)+' '+s.count+'</span>';
     return '<span class="srcpill fail" title="'+esc(s.error||'')+'">'+esc(label)+' failed</span>';
   }).join('');
-  sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+pills+
+  let bandChip='';
+  if(j.band){
+    const cur=(state.listings[0]||{}).currency||'GBP';
+    const loose=j.band.spreadPct!=null&&j.band.spreadPct>90;
+    bandChip='<span class="bandchip'+(loose?' loose':'')+'" title="'+(loose?'Wide range — your search matched a mix of items. Try a more specific model for a tighter estimate.':'Typical price across the listings in this search')+'">typical '+money(j.band.lo,cur)+'–'+money(j.band.hi,cur)+(loose?' · broad search':'')+'</span>';
+  }
+  sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+bandChip+pills+
     '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>';
   $('#sort').value=state.sort;
   $('#sort').addEventListener('change',e=>{state.sort=e.target.value;applyFilters();});
@@ -367,6 +375,21 @@ function dial(score,big){
 const gradeCls=s=>s>=82?'strong':s>=68?'good':s>=54?'fair':'weak';
 function gapTag(l){const g=l.valuation.gapPct;if(g==null)return '<span class="gap b">no band</span>';if(g>=12)return '<span class="gap g">'+g+'% under</span>';if(g>=3)return '<span class="gap m">'+g+'% under</span>';if(g>=-3)return '<span class="gap b">at market</span>';return '<span class="gap b">'+Math.abs(g)+'% over</span>';}
 function srcLabel(id){return (state.sources.find(s=>s.id===id)||{}).label||id;}
+// Per-item line: this listing's own £ saving vs the typical price (varies per card),
+// plus postage. Deliberately NOT the shared band range — that shows once up top.
+function estText(l){
+  const parts=[];
+  const b=l.valuation.band;
+  if(b&&b.mid>0){
+    const d=Math.round(b.mid-l.price);
+    if(d>=1)parts.push(money(d,l.currency)+' under typical');
+    else if(d<=-1)parts.push(money(-d,l.currency)+' over typical');
+    else parts.push('at typical price');
+  }
+  if(l.shipping>0)parts.push('+'+money(l.shipping,l.currency)+' post');
+  else if(l.shipping===0)parts.push('free post/collect');
+  return parts.join('<br>');
+}
 function card(l){
   const w=state.watch.has(l.id);
   return '<article class="deal" data-id="'+esc(l.id)+'">'+
@@ -377,7 +400,7 @@ function card(l){
     '<div class="body"><h3 class="title">'+esc(l.title)+'</h3>'+
     '<div class="meta">'+(l.condition?'<span>'+esc(l.condition)+'</span>':'')+(l.location?'<span>'+esc(l.location)+'</span>':'')+'</div>'+
     '<div class="nums"><span class="price">'+money(l.price,l.currency)+'</span>'+
-    '<span class="est">'+(l.valuation.band?'band '+money(l.valuation.band.lo,l.currency)+'–'+money(l.valuation.band.hi,l.currency):'no band')+(l.shipping?'<br>+'+money(l.shipping,l.currency)+' post':'')+'</span>'+gapTag(l)+'</div>'+
+    '<span class="est">'+estText(l)+'</span>'+gapTag(l)+'</div>'+
     '<div class="foot">'+dial(l.valuation.score,false)+'<a class="viewsrc" href="'+esc(l.url)+'" target="_blank" rel="noopener" data-ext>view on '+esc(srcLabel(l.source))+' ↗</a></div></div></article>';
 }
 function endStr(m){if(m<=0)return 'ended';if(m<60)return m+'m left';return Math.floor(m/60)+'h '+(m%60)+'m';}
