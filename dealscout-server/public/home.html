@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DealScout — every resale marketplace, one search, best deals first</title>
+<meta name="description" content="DealScout scans eBay, Vinted, Depop, StockX, Gumtree, Shpock and more at once, scores every listing against its real going rate, and surfaces the genuine underpriced deals.">
+<style>
+:root{
+  --paper:#f6f4ee;--paper-2:#eeebe1;--card:#fcfbf7;--ink:#171b24;--ink-2:#4b5261;--ink-3:#757d8c;
+  --line:#d8d3c6;--line-soft:#e6e2d6;--acc:#2b4acb;--acc-deep:#1e38a6;--acc-wash:#e9edfb;--acc-wash-2:#dde4f9;
+  --good:#177245;--good-wash:#e2f0e7;--warn:#92610a;--warn-wash:#f4ecd8;
+  --r:12px;--r-s:8px;--r-t:6px;
+  --sans:'Outfit','Segoe UI',system-ui,-apple-system,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --sh1:0 1px 2px rgba(23,27,36,.05),0 4px 14px rgba(23,27,36,.06);--sh2:0 2px 6px rgba(23,27,36,.07),0 16px 44px rgba(23,27,36,.13);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);font-size:16px;line-height:1.6;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.grid-bg{background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:46px 46px}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft)}
+.nav-in{max-width:1120px;margin:0 auto;padding:0 24px;height:66px;display:flex;align-items:center;gap:26px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:1.12rem;letter-spacing:-.02em}
+.brand .ai{color:var(--acc)}
+.brand svg{color:var(--acc)}
+.nav-links{display:flex;gap:24px;margin-left:auto;align-items:center}
+.nav-links a{font-size:.95rem;color:var(--ink-2)}
+.nav-links a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;border-radius:var(--r-s);transition:background .18s,transform .12s,box-shadow .2s;cursor:pointer;border:0}
+.btn-primary{background:var(--acc);color:#fff;padding:11px 20px}
+.btn-primary:hover{background:var(--acc-deep)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-ghost{border:1px solid var(--line);color:var(--ink);padding:10px 18px;background:var(--card)}
+.btn-ghost:hover{border-color:var(--ink-3)}
+.btn-lg{padding:15px 28px;font-size:1.05rem}
+
+/* hero */
+.hero{padding:76px 0 60px;overflow:hidden}
+.hero h1{font-size:clamp(2.6rem,5.6vw,4.2rem);line-height:1.02;letter-spacing:-.035em;font-weight:700;max-width:15ch}
+.hero h1 .u{color:var(--acc)}
+.hero p.sub{margin-top:22px;font-size:1.18rem;color:var(--ink-2);max-width:52ch}
+.hero-cta{margin-top:34px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.hero-note{margin-top:16px;font-family:var(--mono);font-size:.8rem;color:var(--ink-3)}
+.logos{margin-top:44px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.logos span{font-family:var(--mono);font-size:.72rem;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+.chip{font-size:.8rem;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink-2)}
+
+/* sections */
+section{padding:64px 0;border-top:1px solid var(--line-soft)}
+.eyebrow{font-family:var(--mono);font-size:.74rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--acc-deep);margin-bottom:12px}
+h2.sec{font-size:clamp(1.9rem,3.6vw,2.6rem);line-height:1.1;letter-spacing:-.028em;font-weight:700;max-width:20ch}
+.sec-sub{margin-top:14px;color:var(--ink-2);max-width:56ch;font-size:1.05rem}
+.steps{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.step .n{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600}
+.step h3{margin-top:16px;font-size:1.25rem;font-weight:650;letter-spacing:-.01em}
+.step p{margin-top:8px;color:var(--ink-2);font-size:.96rem}
+
+/* pricing */
+.plans{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:start}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:28px 26px;position:relative}
+.plan.mid{border-color:var(--ink);box-shadow:var(--sh2);padding-top:38px}
+.plan .badge{position:absolute;top:-13px;left:26px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:.66rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 10px;border-radius:var(--r-t)}
+.plan h3{font-size:1.2rem;font-weight:650}
+.plan .price{margin-top:10px;display:flex;align-items:baseline;gap:6px}
+.plan .price .n{font-family:var(--mono);font-weight:600;font-size:2.3rem;letter-spacing:-.03em}
+.plan .price .per{color:var(--ink-3);font-size:.85rem}
+.plan ul{margin-top:18px;list-style:none}
+.plan li{padding:8px 0 8px 26px;position:relative;font-size:.93rem;color:var(--ink-2);border-top:1px dashed var(--line-soft)}
+.plan li:first-child{border-top:0}
+.plan li::before{content:"";position:absolute;left:2px;top:15px;width:11px;height:6px;border-left:2px solid var(--good);border-bottom:2px solid var(--good);transform:rotate(-45deg)}
+.plan li.soon::before{border-color:var(--warn)}
+.plan li .soon-tag{font-family:var(--mono);font-size:.6rem;color:var(--warn);background:var(--warn-wash);border-radius:3px;padding:1px 5px;margin-left:4px;vertical-align:1px}
+.plan .btn{width:100%;margin-top:22px}
+.trial-note{margin-top:26px;text-align:center;font-size:.92rem;color:var(--ink-2)}
+.trial-note b{color:var(--ink)}
+
+/* faq */
+.faq{margin-top:40px;max-width:760px}
+.faq details{border-top:1px solid var(--line)}
+.faq details:last-child{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:16px;padding:20px 4px;font-weight:600;font-size:1.05rem}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary .ind{margin-left:auto;font-family:var(--mono);color:var(--ink-3);transition:transform .25s}
+.faq details[open] summary .ind{transform:rotate(45deg)}
+.faq .a{padding:0 4px 22px;color:var(--ink-2);max-width:64ch}
+
+/* cta band */
+.cta-band{margin:64px 0;background:var(--ink);color:var(--paper);border-radius:var(--r);padding:52px 44px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.cta-band h2{font-size:clamp(1.6rem,3vw,2.2rem);letter-spacing:-.025em;font-weight:700;max-width:18ch}
+.cta-band .btn{margin-left:auto}
+
+footer{border-top:1px solid var(--line-soft);padding:36px 0 48px;color:var(--ink-3);font-size:.88rem}
+.foot{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.foot .sp{margin-left:auto}
+footer a{color:var(--ink-3)}footer a:hover{color:var(--ink)}
+
+@media(max-width:820px){.steps,.plans{grid-template-columns:1fr}.plan.mid{order:-1}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg style="display:none"><symbol id="radar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.5-6.5"/><circle cx="15.5" cy="15" r="1.3" fill="currentColor" stroke="none"/></g></symbol>
+<symbol id="arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></g></symbol></svg>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="/"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#radar"/></svg>DealScout<span class="ai">&nbsp;AI</span></a>
+    <nav class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/login">Log in</a>
+      <a class="btn btn-primary" href="/signup">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero grid-bg" style="border-top:0">
+    <div class="wrap">
+      <h1>Every resale marketplace. <span class="u">One search.</span></h1>
+      <p class="sub">DealScout scans eBay, Vinted, Depop, StockX, Gumtree and more at once, scores every listing against its real going rate, and puts the genuine underpriced deals first.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="/signup">Start free <svg width="18" height="18" viewBox="0 0 24 24"><use href="#arrow"/></svg></a>
+        <a class="btn btn-ghost btn-lg" href="#pricing">See plans</a>
+      </div>
+      <p class="hero-note">Free to start · no card required · phone-verified 7-day Pro trial available</p>
+      <div class="logos">
+        <span>Scans</span>
+        <span class="chip">eBay</span><span class="chip">Vinted</span><span class="chip">Depop</span><span class="chip">StockX</span><span class="chip">Gumtree</span><span class="chip">Shpock</span><span class="chip">Grailed</span><span class="chip">Vestiaire</span><span class="chip">Preloved</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2 class="sec">From one search to the best deal, in seconds.</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>Scan</h3><p>Type a product once. DealScout searches every resale marketplace you've enabled, in parallel.</p></div>
+        <div class="step"><div class="n">2</div><h3>Score</h3><p>Each listing is priced against its real going rate — outliers and mis-listings thrown out — and scored 0–100.</p></div>
+        <div class="step"><div class="n">3</div><h3>Act</h3><p>The genuine underpriced finds rank first, each linking straight to the listing. Save searches and get alerts.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="wrap">
+      <p class="eyebrow">Pricing</p>
+      <h2 class="sec">Start free. Upgrade when it pays for itself.</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Free</h3>
+          <div class="price"><span class="n">£0</span><span class="per">forever</span></div>
+          <ul>
+            <li>10 scans a day</li>
+            <li>Core marketplaces</li>
+            <li>Watchlist up to 5 items</li>
+            <li>3 saved searches</li>
+            <li>1-hour alert digest</li>
+          </ul>
+          <a class="btn btn-ghost" href="/signup">Get started</a>
+        </div>
+        <div class="plan mid">
+          <span class="badge">Most popular</span>
+          <h3>Pro</h3>
+          <div class="price"><span class="n">£9.99</span><span class="per">/month</span></div>
+          <ul>
+            <li>Unlimited scans</li>
+            <li>Watchlist up to 50 items</li>
+            <li>25 saved searches</li>
+            <li>Advanced filters</li>
+            <li>5-minute alerts</li>
+            <li>No ads</li>
+            <li class="soon">Historical pricing <span class="soon-tag">soon</span></li>
+          </ul>
+          <a class="btn btn-primary" href="/signup?plan=pro">Start Pro</a>
+        </div>
+        <div class="plan">
+          <h3>Elite</h3>
+          <div class="price"><span class="n">£24.99</span><span class="per">/month</span></div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>All premium marketplaces</li>
+            <li>Unlimited watchlist & searches</li>
+            <li>Instant alerts</li>
+            <li>CSV / API export</li>
+            <li class="soon">Trend analytics <span class="soon-tag">soon</span></li>
+            <li class="soon">Profit predictions <span class="soon-tag">soon</span></li>
+          </ul>
+          <a class="btn btn-ghost" href="/signup?plan=elite">Start Elite</a>
+        </div>
+      </div>
+      <p class="trial-note">New here? Verify a phone number and get a <b>7-day Pro trial free</b> — one per number.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2 class="sec">Straight answers.</h2>
+      <div class="faq">
+        <details open><summary>Which marketplaces does it scan?<span class="ind">+</span></summary><div class="a">Genuine second-hand and resale marketplaces: eBay, Vinted, Gumtree and Shpock on every plan, plus premium connectors — Depop, StockX, Grailed, Vestiaire and Preloved — on Elite. All authentic goods; no counterfeit or replica sources.</div></details>
+        <details><summary>How is the "going rate" worked out?<span class="ind">+</span></summary><div class="a">From the live listings each search returns. DealScout throws out bundles, job-lots and mis-listings (so a £400 controller doesn't skew a £20 one), then takes the median of what's left. A listing far below that is flagged to verify, not celebrated.</div></details>
+        <details><summary>What's the free trial?<span class="ind">+</span></summary><div class="a">Verify a phone number at sign-up and get 7 days of Pro free — unlimited scans, bigger watchlist, advanced filters. One trial per phone number.</div></details>
+        <details><summary>Can I cancel any time?<span class="ind">+</span></summary><div class="a">Yes. Manage or cancel your subscription from your account page at any time, through Stripe's secure portal. No lock-in.</div></details>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Stop refreshing ten tabs. Scan them all at once.</h2>
+      <a class="btn btn-primary btn-lg" href="/signup">Create your free account <svg width="18" height="18" viewBox="0 0 24 24"><use href="#arrow"/></svg></a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" style="font-size:1rem" href="/"><svg width="18" height="18" viewBox="0 0 24 24" style="color:var(--acc)"><use href="#radar"/></svg> DealScout AI</a>
+    <span>Genuine resale deal scanner.</span>
+    <span class="sp"></span>
+    <a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="/login">Log in</a>
+  </div>
+</footer>
+
+<script>
+// If already signed in, send returning visitors straight to the app.
+fetch('/api/me').then(r=>r.json()).then(d=>{if(d.user){document.querySelectorAll('a[href="/signup"],a[href="/login"]').forEach(a=>{a.textContent='Open app';a.setAttribute('href','/app')})}}).catch(()=>{});
+</script>
+</body>
+</html>

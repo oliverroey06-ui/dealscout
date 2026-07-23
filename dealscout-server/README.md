@@ -24,8 +24,8 @@ Node server you can run locally or deploy to a host.
 
 ## The one thing to understand first
 
-Only **eBay** offers a real, sanctioned API. The other four have **no public
-API**, so DealScout reaches them by **unofficial scraping**, which:
+Only **eBay** offers a real, sanctioned API. The other marketplaces have **no
+public API**, so DealScout reaches them by **unofficial scraping**, which:
 
 - **breaks those sites' Terms of Service**, and
 - **is fragile** — it can stop working whenever a site changes its markup or
@@ -107,15 +107,84 @@ datacenter IP look residential.
 
 ---
 
+## Accounts, tiers & billing (SaaS mode)
+
+DealScout ships with a full account layer that stays **dormant until you turn it
+on**. With no database configured the server runs in **open mode** — the scanner
+is public, exactly like the demo. Set a `DATABASE_URL` (or `AUTH_FORCE=1` for a
+local in-memory trial) and the same server becomes a real multi-tenant SaaS: a
+marketing home page, sign-up / login (email + password **and** Google), per-plan
+limits, Stripe subscriptions, and a phone-verified free trial.
+
+```
+open mode  (no DATABASE_URL)        SaaS mode  (DATABASE_URL set)
+──────────────────────────────      ──────────────────────────────────
+/         scanner (public)          /          marketing home
+                                    /login     email+password / Google
+                                    /app       scanner (needs an account)
+                                    /account   plan, billing, trial
+```
+
+### The three plans
+
+| | Free | Pro — £9.99/mo | Elite — £24.99/mo |
+|---|---|---|---|
+| Marketplaces | core (eBay, Vinted, Gumtree, Shpock) | core | **all** (+ Depop, StockX, Grailed, Vestiaire, Preloved) |
+| Watchlist | 5 | 50 | unlimited |
+| Saved searches | 3 | 25 | unlimited |
+| AI deal scores / day | 10 | unlimited | unlimited |
+| Advanced filters | — | ✓ | ✓ |
+| Data export | — | — | ✓ |
+| Ads | shown | hidden | hidden |
+
+Limits are **enforced on the server** (`src/plans.js`) — the UI reflects them but
+can't grant them. `activePlanId(user)` resolves the best of a paid subscription
+and any live trial, so gating is a single call everywhere it's needed.
+
+### Free 7-day Pro trial (phone-verified, once per number)
+
+A logged-in free user can claim a **7-day Pro trial** from `/account`, gated by
+an **SMS one-time code** (Twilio Verify). The phone number is **hashed (SHA-256)
+before storage** — the raw number is never kept — and that hash is what blocks a
+second trial from the same number. No card required.
+
+### Going live — four free services
+
+| Service | Why | Env vars |
+|---|---|---|
+| **Neon** (Postgres) | accounts + watchlist persistence; flips SaaS mode on | `DATABASE_URL` |
+| **Stripe** | Pro / Elite subscriptions, billing portal, webhooks | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_ELITE` |
+| **Google OAuth** | "Continue with Google" sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| **Twilio Verify** | the phone-verified trial | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` |
+
+Every one has a free tier, and each block is **independent**: set only Neon and
+you get accounts with no billing (the upgrade buttons simply hide); add Stripe
+when you're ready to charge; add Google and Twilio whenever you like. Also set a
+long random `SESSION_SECRET` in production — sessions are stateless, HMAC-signed
+cookies. `.env.example` lists every variable.
+
+---
+
 ## Sources & status
 
-| Source          | Method                     | Default | Reliability |
+| Source          | Method                     | Tier    | Reliability |
 |-----------------|----------------------------|---------|-------------|
-| eBay            | Official Browse API        | on      | ★★★★★ stable, sanctioned |
-| Vinted          | Internal JSON endpoint     | on      | ★★★ works until they rotate anti-bot |
-| Gumtree         | Server-HTML scrape         | on      | ★★★ selector-dependent |
-| Shpock          | Embedded JSON / HTML       | on      | ★★ most likely to need updates |
+| eBay            | Official API (keys) / scrape | core  | ★★★★★ with keys · scrape blocked from cloud IPs |
+| Vinted          | Internal JSON endpoint     | core    | ★★★ works until they rotate anti-bot |
+| Gumtree         | Server-HTML scrape         | core    | ★★★ selector-dependent |
+| Shpock          | Embedded JSON / HTML       | core    | ★★ most likely to need updates |
+| Depop           | Internal search JSON       | premium | ★★★ best-effort |
+| StockX          | Browse JSON                | premium | ★ heavily bot-protected (needs residential IP / official API) |
+| Grailed         | Algolia (public keys)      | premium | ★★ needs GRAILED_ALGOLIA_* keys |
+| Vestiaire       | Search API                 | premium | ★ undocumented, best-effort |
+| Preloved        | Server-HTML scrape         | premium | ★★★ best-effort |
 | FB Marketplace  | Playwright, logged-in      | **off** | ★ fragile, ToS, needs a session |
+
+`core` sources are available on every plan; `premium` resale connectors unlock on
+**Elite**. All are genuine second-hand/resale marketplaces for authentic goods.
+Like eBay's scrape path, the premium connectors are bot-protected and will often
+be blocked from a datacenter IP — they work best from a residential connection or
+via each site's official API.
 
 The UI shows a live status pill per source after each scan (count or error), so
 you always know which ones responded.
@@ -173,10 +242,20 @@ GET /api/scan?q=<query>&sources=<csv>&limit=<n>&fresh=1
                    valuation: { score, grade, gapPct, band, parts:[…] } }] }
 
 GET /api/health → { ok, uptime }
+
+# SaaS mode adds these (JSON; auth via the ds_session cookie):
+GET  /api/config · /api/plans · /api/me
+POST /api/auth/signup · /api/auth/login · /api/auth/logout
+GET  /api/auth/google · /api/auth/google/callback
+POST /api/billing/checkout · /api/billing/portal · /api/stripe/webhook
+POST /api/trial/send · /api/trial/verify
+GET/POST/DELETE /api/watchlist · /api/saved-searches
 ```
 
 `sources` defaults to all enabled. Unknown sources are ignored. Identical scans
-are cached for `CACHE_TTL_MS`; add `&fresh=1` to bypass.
+are cached for `CACHE_TTL_MS`; add `&fresh=1` to bypass. In SaaS mode `/api/scan`
+also requires a session and enforces the plan's daily-score and source limits
+(`401` when logged out, `402` when over a limit).
 
 ---
 
@@ -184,19 +263,33 @@ are cached for `CACHE_TTL_MS`; add `&fresh=1` to bypass.
 
 ```
 src/
-  server.js              Express app + /api routes + static UI
+  server.js              Express app, /api routes, auth-gating, static pages
+  plans.js               tiers + per-plan limits + activePlanId() gating
+  store.js               data layer — Postgres (Neon) or in-memory, one API
+  auth.js                scrypt passwords, signed session cookies, Google OAuth
+  billing.js             Stripe checkout, billing portal, webhook sync
+  verify.js              Twilio Verify — phone-verified trial (hashed numbers)
   valuation.js           value band + deal scoring
   normalize.js           common listing schema + helpers
   cache.js               TTL cache
   connectors/
     index.js             registry, toggles, isolated per-source runner
-    ebay.js              official Browse API (OAuth handled)
+    ebay.js              official Browse API (OAuth) + no-key scrape fallback
     vinted.js            internal JSON API + cookie bootstrap
     gumtree.js           HTML scrape (cheerio)
     shpock.js            embedded-JSON / DOM scrape
+    depop.js             internal search JSON            (premium)
+    stockx.js            browse JSON                     (premium)
+    grailed.js           Algolia public keys             (premium)
+    vestiaire.js         search API                      (premium)
+    preloved.js          HTML scrape                     (premium)
     facebook.js          Playwright, opt-in
-public/index.html        the scanner UI (one file, no build step)
-test/                    parser + valuation unit tests, API + UI integration
+public/
+  home.html              marketing landing (SaaS mode)
+  auth.html              login / sign-up (email + Google)
+  index.html             the scanner UI (one file, no build step)
+  account.html           plan, billing, trial
+test/                    parser + valuation units, API + SaaS + UI integration
 scripts/facebook-login.js
 Dockerfile, render.yaml, .env.example
 ```
@@ -225,7 +318,9 @@ That's the whole contract — scoring, the UI, and status all pick it up.
 - A scan assumes its results are comparables for one product — search a specific
   product (`fender player stratocaster`), not a vague category (`guitar`), for a
   meaningful value band.
-- No persistence yet: the watchlist lives in the browser session. Wiring a small
-  datastore + saved-search alerts is the natural next step.
+- Persistence is real in SaaS mode (Postgres/Neon) and per-session in open mode.
+  Saved-search **alerts** — a background re-scan that notifies you when a deal
+  appears — are the natural next step; the saved searches themselves already
+  persist.
 - Respect each marketplace's terms and rate limits. This tool is for personal
   deal-finding; don't hammer the sources.

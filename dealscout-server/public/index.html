@@ -206,6 +206,11 @@ a{color:inherit}
     <span class="brand"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#i-radar"/></svg>DealScout<span class="ai">&nbsp;AI</span></span>
     <span class="tagline">real-time marketplace deal scanner</span>
     <a class="gh" id="watch-count" href="#" title="Watchlist">☆ Watchlist 0</a>
+    <span id="acct" style="display:none;align-items:center;gap:10px">
+      <span id="scanmeter" style="font-family:var(--mono);font-size:.72rem;color:var(--ink-3)"></span>
+      <a id="acct-chip" href="/account" title="Account" style="font-family:var(--mono);font-size:.74rem;font-weight:600;border:1px solid var(--acc);background:var(--acc-wash);color:var(--acc-deep);border-radius:6px;padding:6px 10px;text-decoration:none"></a>
+      <a id="acct-logout" href="#" style="font-size:.8rem;color:var(--ink-3)">Log out</a>
+    </span>
   </div>
 </header>
 
@@ -317,7 +322,12 @@ async function scan(){
   const url='/api/scan?q='+encodeURIComponent(q)+'&sources='+[...state.selected].join(',');
   try{
     const r=await fetch(url);const j=await r.json();
-    if(!j.ok){throw new Error(j.error||'scan failed');}
+    if(!j.ok){
+      if(r.status===401){location.href='/login';return;}
+      if(r.status===402){$('#grid').innerHTML='';$('#empty').hidden=false;$('#empty-msg').innerHTML=esc(j.error||'You’ve hit a plan limit.')+' <a href="/account" style="color:var(--acc-deep);font-weight:600">Upgrade →</a>';return;}
+      throw new Error(j.error||'scan failed');
+    }
+    if(j.scansToday!=null&&j.scansPerDay!=null){const left=Math.max(0,j.scansPerDay-j.scansToday);const m=document.getElementById('scanmeter');if(m)m.textContent=left+' of '+j.scansPerDay+' free scans left today';}
     state.listings=j.listings;state.lastMeta=j;
     renderStatus(j);applyFilters();
     if(!j.listings.length){$('#grid').innerHTML='';$('#empty').hidden=false;
@@ -485,6 +495,26 @@ function openWatchlist(){
 }
 
 loadSources();
+
+// ---- accounts / plan chip / ads (SaaS mode only) ----
+(async function initAccount(){
+  try{
+    const cfg=await (await fetch('/api/config')).json();
+    if(!cfg.authEnabled) return;               // open mode — no accounts
+    if(!cfg.user){ location.href='/login'; return; }
+    const u=cfg.user;
+    const acct=$('#acct'); if(acct) acct.style.display='flex';
+    const chip=$('#acct-chip'); if(chip){ chip.textContent=({free:'FREE',pro:'PRO',elite:'ELITE'}[u.plan]||String(u.plan).toUpperCase()); if(u.plan!=='free'){chip.style.borderColor='var(--good)';chip.style.background='var(--good-wash)';chip.style.color='var(--good)';} }
+    $('#acct-logout')?.addEventListener('click',async e=>{e.preventDefault();await fetch('/api/auth/logout',{method:'POST'});location.href='/';});
+    if(u.plan==='free'){
+      const bar=document.createElement('a');
+      bar.href='/account';
+      bar.textContent='You’re on Free — 10 scans/day. Go Pro for unlimited scans, a bigger watchlist and no ads →';
+      bar.style.cssText='display:block;text-align:center;background:var(--warn-wash);color:var(--warn);font-size:.84rem;font-weight:600;text-decoration:none;padding:9px 16px;border-bottom:1px solid var(--line-soft)';
+      document.querySelector('.searchwrap')?.after(bar);
+    }
+  }catch(_){}
+})();
 </script>
 </body>
 </html>

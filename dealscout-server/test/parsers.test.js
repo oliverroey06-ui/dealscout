@@ -7,6 +7,8 @@ import { dirname, join } from 'node:path';
 import { _mapItemsForTest as mapEbay, parseSearch as parseEbaySearch } from '../src/connectors/ebay.js';
 import { _mapItemsForTest as mapVinted } from '../src/connectors/vinted.js';
 import { parse as parseGumtree } from '../src/connectors/gumtree.js';
+import { parse as parseDepop } from '../src/connectors/depop.js';
+import { parse as parsePreloved } from '../src/connectors/preloved.js';
 import { _mapCardForTest as mapFbCard } from '../src/connectors/facebook.js';
 import { scoreScan, buildBand } from '../src/valuation.js';
 import { normalize, parseMoney } from '../src/normalize.js';
@@ -64,6 +66,24 @@ test('Gumtree parser extracts cards from server HTML', () => {
   assert.equal(items[0].price, 375);
   assert.equal(items[0].location, 'Leeds');
   assert.ok(items[0].url.startsWith('https://www.gumtree.com/p/'));
+});
+
+test('Depop parser maps internal search JSON', () => {
+  const items = parseDepop(JSON.parse(fx('depop.json')));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].source, 'depop');
+  assert.equal(items[0].price, 85);
+  assert.equal(items[0].title, 'Nike Dunk Low Panda UK9 barely worn'); // brand not doubled
+  assert.ok(items[0].url.includes('/products/nike-dunk-low-panda-111'));
+  assert.equal(items[1].price, 78); // numeric price shape
+});
+
+test('Preloved parser extracts adverts from HTML', () => {
+  const items = parsePreloved(fx('preloved.html'));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].price, 360);
+  assert.equal(items[0].location, 'Leeds');
+  assert.ok(items[0].url.startsWith('https://www.preloved.co.uk/adverts/'));
 });
 
 test('Facebook card text parser splits price/title/location', () => {

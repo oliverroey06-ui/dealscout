@@ -23,7 +23,8 @@ Object.assign(process.env, {
   EBAY_OAUTH_URL: `${M}/oauth`, EBAY_SEARCH_URL: `${M}/ebay/search`,
   VINTED_BASE: M, GUMTREE_BASE: M
 });
-const { app } = await import('../src/server.js');
+const { buildApp } = await import('../src/server.js');
+const { app } = await buildApp();
 const server = app.listen(0);
 await new Promise(r => server.on('listening', r));
 const base = `http://127.0.0.1:${server.address().port}`;

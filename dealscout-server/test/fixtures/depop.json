@@ -1,0 +1,6 @@
+{
+  "products": [
+    { "id": 111, "slug": "nike-dunk-low-panda-111", "brandName": "Nike", "description": "Nike Dunk Low Panda UK9 barely worn", "price": { "priceAmount": "85.00", "currencyName": "GBP" }, "preview": { "320": "https://media.depop.com/111.jpg" }, "condition": "Barely used", "likeCount": 12, "sellerUsername": "kicksbyroey" },
+    { "id": 112, "slug": "dunk-112", "title": "Dunk Low Panda size 9", "price": { "priceAmountAsNumber": 78, "currencyName": "GBP" }, "condition": "Used", "sellerUsername": "solehut" }
+  ]
+}

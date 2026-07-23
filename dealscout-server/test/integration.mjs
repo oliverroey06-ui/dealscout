@@ -33,7 +33,8 @@ Object.assign(process.env, {
   VINTED_BASE: M, GUMTREE_BASE: M
 });
 
-const { app } = await import('../src/server.js');
+const { buildApp } = await import('../src/server.js');
+const { app } = await buildApp();
 const server = app.listen(0);
 await new Promise(r => server.on('listening', r));
 const port = server.address().port;
@@ -44,7 +45,7 @@ const check = (cond, msg) => { if (!cond) { failed++; console.log('  ✗ ' + msg
 
 // /api/sources
 const sources = await (await fetch(`${base}/api/sources`)).json();
-check(sources.sources.length === 5, 'sources endpoint lists all 5 connectors');
+check(sources.sources.length === 10, 'sources endpoint lists all 10 connectors');
 check(sources.sources.find(s => s.id === 'ebay').ready === true, 'eBay reports ready when keys present');
 check(sources.sources.find(s => s.id === 'facebook').ready === false, 'Facebook reports not-ready by default');
 

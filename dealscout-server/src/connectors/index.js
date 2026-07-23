@@ -7,15 +7,20 @@ import * as vinted from './vinted.js';
 import * as gumtree from './gumtree.js';
 import * as shpock from './shpock.js';
 import * as facebook from './facebook.js';
+import * as depop from './depop.js';
+import * as stockx from './stockx.js';
+import * as grailed from './grailed.js';
+import * as vestiaire from './vestiaire.js';
+import * as preloved from './preloved.js';
 
-export const CONNECTORS = { ebay, vinted, gumtree, shpock, facebook };
+export const CONNECTORS = { ebay, vinted, gumtree, shpock, facebook, depop, stockx, grailed, vestiaire, preloved };
 
-// Which sources are switched on, from env. Default: eBay + the three HTTP
-// scrapers on; Facebook off (needs explicit opt-in + a browser session).
+// Which sources are switched on, from env. Default: core scrapers + the resale
+// premium connectors. Facebook stays off (needs a logged-in browser session).
 export function enabledSources(env) {
   const explicit = (env.SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   if (explicit.length) return explicit.filter(s => CONNECTORS[s]);
-  const on = ['ebay', 'vinted', 'gumtree', 'shpock'];
+  const on = ['ebay', 'vinted', 'gumtree', 'shpock', 'depop', 'stockx', 'grailed', 'vestiaire', 'preloved'];
   if (env.FACEBOOK_ENABLED === '1') on.push('facebook');
   return on;
 }
