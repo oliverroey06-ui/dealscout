@@ -1,0 +1,63 @@
+{
+  "itemSummaries": [
+    {
+      "itemId": "v1|1101|0",
+      "title": "NVIDIA RTX 3080 Founders Edition 10GB GDDR6X Boxed",
+      "price": { "value": "310.00", "currency": "GBP" },
+      "condition": "Used",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/1101",
+      "image": { "imageUrl": "https://i.ebayimg.com/images/1101.jpg" },
+      "seller": { "username": "pc_partsman", "feedbackPercentage": "99.4", "feedbackScore": 891 },
+      "itemLocation": { "city": "Manchester", "country": "GB" },
+      "shippingOptions": [{ "shippingCost": { "value": "5.95", "currency": "GBP" } }],
+      "buyingOptions": ["FIXED_PRICE"],
+      "shortDescription": "Founders edition, boxed with all accessories, tested working."
+    },
+    {
+      "itemId": "v1|1102|0",
+      "title": "RTX 3080 Founders Edition — spares or repair, artifacts",
+      "price": { "value": "150.00", "currency": "GBP" },
+      "condition": "For parts or not working",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/1102",
+      "image": { "imageUrl": "https://i.ebayimg.com/images/1102.jpg" },
+      "seller": { "username": "salvagetech", "feedbackPercentage": "97.1", "feedbackScore": 74 },
+      "itemLocation": { "city": "Coventry", "country": "GB" },
+      "buyingOptions": ["AUCTION"],
+      "itemEndDate": "2099-01-01T00:00:00.000Z"
+    },
+    {
+      "itemId": "v1|1103|0",
+      "title": "Nvidia GeForce RTX 3080 FE 10GB graphics card",
+      "price": { "value": "365.00", "currency": "GBP" },
+      "condition": "Used",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/1103",
+      "image": { "imageUrl": "https://i.ebayimg.com/images/1103.jpg" },
+      "seller": { "username": "gpuworld", "feedbackPercentage": "99.9", "feedbackScore": 5120 },
+      "itemLocation": { "city": "Leeds", "country": "GB" },
+      "shippingOptions": [{ "shippingCost": { "value": "0.00", "currency": "GBP" } }],
+      "buyingOptions": ["FIXED_PRICE"]
+    },
+    {
+      "itemId": "v1|1104|0",
+      "title": "RTX 3080 Founders Edition boxed excellent",
+      "price": { "value": "390.00", "currency": "GBP" },
+      "condition": "Used",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/1104",
+      "image": { "imageUrl": "https://i.ebayimg.com/images/1104.jpg" },
+      "seller": { "username": "boxedtech", "feedbackPercentage": "100.0", "feedbackScore": 240 },
+      "itemLocation": { "city": "Bristol", "country": "GB" },
+      "shippingOptions": [{ "shippingCost": { "value": "4.50", "currency": "GBP" } }],
+      "buyingOptions": ["FIXED_PRICE"]
+    },
+    {
+      "itemId": "v1|1105|0",
+      "title": "RTX 3080 FE 10GB",
+      "price": { "value": "405.00", "currency": "GBP" },
+      "condition": "Used",
+      "itemWebUrl": "https://www.ebay.co.uk/itm/1105",
+      "seller": { "username": "quicksell", "feedbackPercentage": "98.2", "feedbackScore": 33 },
+      "buyingOptions": ["FIXED_PRICE"]
+    }
+  ],
+  "total": 5
+}

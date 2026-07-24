@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DealScout — sign in</title>
+<style>
+:root{--paper:#f6f4ee;--card:#fcfbf7;--ink:#171b24;--ink-2:#4b5261;--ink-3:#757d8c;--line:#d8d3c6;--line-soft:#e6e2d6;--acc:#2b4acb;--acc-deep:#1e38a6;--acc-wash:#e9edfb;--crit:#b02a1e;--crit-wash:#f7e5e2;--good:#177245;--r-s:8px;--sans:'Outfit','Segoe UI',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);background-size:46px 46px}
+a{color:var(--acc-deep);text-decoration:none}a:hover{text-decoration:underline}
+.top{padding:22px 24px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:1.1rem;letter-spacing:-.02em}
+.brand .ai{color:var(--acc)}.brand svg{color:var(--acc)}
+.center{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 6px rgba(23,27,36,.07),0 16px 44px rgba(23,27,36,.13);padding:32px 30px}
+h1{font-size:1.5rem;letter-spacing:-.02em;font-weight:700}
+.sub{color:var(--ink-2);margin-top:6px;font-size:.94rem;margin-bottom:22px}
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;height:46px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--card);font-weight:600;font-size:.95rem;cursor:pointer}
+.gbtn:hover{border-color:var(--ink-3)}
+.gbtn svg{width:18px;height:18px}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--ink-3);font-size:.82rem}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--ink-2);margin:14px 0 6px}
+input{width:100%;height:46px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--paper);padding:0 14px;font-size:.98rem;font-family:inherit}
+input:focus{outline:2px solid var(--acc);outline-offset:-1px}
+.submit{width:100%;height:48px;margin-top:22px;background:var(--acc);color:#fff;border:0;border-radius:var(--r-s);font-weight:600;font-size:1rem;cursor:pointer}
+.submit:hover{background:var(--acc-deep)}
+.submit:disabled{opacity:.6;cursor:default}
+.err{display:none;margin-top:14px;background:var(--crit-wash);color:var(--crit);border-radius:var(--r-s);padding:10px 12px;font-size:.88rem}
+.err.on{display:block}
+.foot{margin-top:20px;text-align:center;font-size:.92rem;color:var(--ink-2)}
+.legal{margin-top:16px;text-align:center;font-size:.76rem;color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="top"><a class="brand" href="/"><svg width="22" height="22" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.5-6.5"/></g></svg>DealScout<span class="ai">&nbsp;AI</span></a></div>
+<div class="center">
+  <div class="box">
+    <h1 id="title">Welcome back</h1>
+    <p class="sub" id="subtitle">Log in to your DealScout account.</p>
+
+    <button class="gbtn" id="google" hidden>
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+      <span id="gtext">Continue with Google</span>
+    </button>
+    <div class="divider" id="divider" hidden>or</div>
+
+    <form id="form" novalidate>
+      <div id="name-row" hidden>
+        <label for="name">Name</label>
+        <input id="name" type="text" autocomplete="name" placeholder="Your name">
+      </div>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@email.com" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+      <div class="err" id="err"></div>
+      <button class="submit" id="submit" type="submit">Log in</button>
+    </form>
+
+    <p class="foot" id="switch"></p>
+    <p class="legal" id="legal" hidden>By creating an account you agree to fair use. DealScout scans genuine resale marketplaces only.</p>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let mode = location.pathname.replace('/','') === 'signup' ? 'signup' : 'login';
+const plan = new URLSearchParams(location.search).get('plan');
+
+function render(){
+  const signup = mode==='signup';
+  $('title').textContent = signup ? 'Create your account' : 'Welcome back';
+  $('subtitle').textContent = signup ? 'Free to start — scan every resale marketplace at once.' : 'Log in to your DealScout account.';
+  $('name-row').hidden = !signup;
+  $('password').autocomplete = signup ? 'new-password' : 'current-password';
+  $('submit').textContent = signup ? 'Create account' : 'Log in';
+  $('gtext').textContent = signup ? 'Sign up with Google' : 'Continue with Google';
+  $('legal').hidden = !signup;
+  $('switch').innerHTML = signup
+    ? 'Already have an account? <a href="/login">Log in</a>'
+    : "New to DealScout? <a href=\"/signup\">Create an account</a>";
+  $('err').classList.remove('on');
+  history.replaceState(null,'', (signup?'/signup':'/login')+(plan?('?plan='+plan):''));
+}
+render();
+
+// enable Google if configured
+fetch('/api/config').then(r=>r.json()).then(c=>{
+  if(c.user){location.href='/app';return;}
+  if(c.googleEnabled){ $('google').hidden=false; $('divider').hidden=false; $('google').onclick=()=>location.href='/api/auth/google'; }
+}).catch(()=>{});
+if(new URLSearchParams(location.search).get('error')){ $('err').textContent='Google sign-in didn’t complete. Try again or use email.'; $('err').classList.add('on'); }
+
+// swap without full reload when clicking the switch links
+document.addEventListener('click',e=>{const a=e.target.closest('a[href="/login"],a[href="/signup"]');if(a){e.preventDefault();mode=a.getAttribute('href')==='/signup'?'signup':'login';render();}});
+
+$('form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const err=$('err'); err.classList.remove('on');
+  const email=$('email').value.trim(), password=$('password').value, name=$('name').value.trim();
+  if(mode==='signup' && password.length<8){ err.textContent='Password must be at least 8 characters.'; err.classList.add('on'); return; }
+  $('submit').disabled=true;
+  try{
+    const res=await fetch('/api/auth/'+(mode==='signup'?'signup':'login'),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password,name})});
+    const d=await res.json();
+    if(!res.ok){ err.textContent=d.error||'Something went wrong.'; err.classList.add('on'); $('submit').disabled=false; return; }
+    location.href = (mode==='signup'&&plan&&plan!=='free') ? ('/account?upgrade='+plan) : '/app';
+  }catch(_){ err.textContent='Network error — try again.'; err.classList.add('on'); $('submit').disabled=false; }
+});
+</script>
+</body>
+</html>

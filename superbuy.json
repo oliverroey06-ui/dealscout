@@ -1,0 +1,23 @@
+{
+  "state": { "code": 0 },
+  "data": {
+    "list": [
+      {
+        "goodsId": "789012",
+        "title": "Anime Figure Model 20cm PVC Collectible Statue",
+        "price": "89.00",
+        "picUrl": "//img.superbuy.com/figure.jpg",
+        "shopName": "Hobby Collect Shop",
+        "sales": "120"
+      },
+      {
+        "goodsId": "789013",
+        "title": "Automatic Mechanical Watch Skeleton Stainless Steel",
+        "price": "350.00",
+        "picUrl": "//img.superbuy.com/watch.jpg",
+        "shopName": "TimeKeeper Store",
+        "sales": "45"
+      }
+    ]
+  }
+}
