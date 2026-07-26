@@ -39,6 +39,19 @@ export function detectCurrency(v, fallback = 'GBP') {
   return fallback;
 }
 
+// Approximate FX to GBP for cross-border (China) sources, so a China scan mixing
+// USD marketplaces and CNY agents is comparable in one value band. Intentionally
+// rough and static — override any rate with env FX_<CUR>_GBP (e.g. FX_USD_GBP=0.79).
+// This is a deal indicator, not accounting; the UI labels China prices as approx.
+export const FX_TO_GBP = { GBP: 1, USD: 0.79, EUR: 0.85, CNY: 0.11, HKD: 0.10, JPY: 0.0053 };
+export function toGBP(amount, cur = 'USD', env = null) {
+  const a = parseMoney(amount);
+  if (a == null) return null;
+  const override = env && Number(env['FX_' + String(cur) + '_GBP']);
+  const rate = (override && isFinite(override) && override > 0) ? override : (FX_TO_GBP[cur] ?? 1);
+  return a * rate;
+}
+
 const CUR_SYMBOL = { GBP: '£', EUR: '€', USD: '$', CAD: 'C$', AUD: 'A$', JPY: '¥' };
 export function fmtMoney(n, cur = 'GBP') {
   if (n == null || !isFinite(n)) return '—';

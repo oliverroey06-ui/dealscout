@@ -1,0 +1,21 @@
+{
+  "code": 0,
+  "data": {
+    "list": [
+      {
+        "num_iid": "555001",
+        "title": "Cotton Hoodie Unisex Heavyweight Loose Fit",
+        "price": "119.00",
+        "pic_url": "//img.cssbuy.com/hoodie.jpg",
+        "seller_nick": "Fashion CN Store"
+      },
+      {
+        "num_iid": "555002",
+        "title": "Canvas Backpack Large Capacity Laptop Bag",
+        "price": "75.00",
+        "pic_url": "//img.cssbuy.com/bag.jpg",
+        "seller_nick": "BagMaker"
+      }
+    ]
+  }
+}

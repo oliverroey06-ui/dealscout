@@ -3,17 +3,18 @@
 // and defensive. Expect blocks from datacenter IPs. Against ToS.
 
 import { normalize, parseMoney } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'vestiaire', label: 'Vestiaire', kind: 'scrape' };
 
 export async function search({ query, limit = 30, env, signal }) {
   const url = env.VESTIAIRE_SEARCH || 'https://search.vestiairecollective.com/v1/product/search';
-  const res = await fetch(url, {
+  const res = await scrapeFetch(url, {
     method: 'POST', signal,
     headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ pagination: { offset: 0, limit: Math.min(40, limit) }, fields: [], q: query, filters: {} }),
-  });
+  }, env);
   if (!res.ok) throw new Error(`Vestiaire returned ${res.status} (undocumented API — may need a residential IP)`);
   return parse(await res.json()).slice(0, limit);
 }

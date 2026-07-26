@@ -8,6 +8,7 @@
 // their anti-bot or change the JSON shape. Toggle it off if it starts failing.
 
 import { normalize } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 
@@ -15,10 +16,10 @@ export const meta = { id: 'vinted', label: 'Vinted', kind: 'scrape' };
 
 let cookieCache = { cookie: null, exp: 0 };
 
-async function getCookie(base, signal) {
+async function getCookie(base, signal, env) {
   const now = Date.now();
   if (cookieCache.cookie && now < cookieCache.exp) return cookieCache.cookie;
-  const res = await fetch(base, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+  const res = await scrapeFetch(base, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   const raw = res.headers.get('set-cookie') || '';
   // Keep the session + anti-csrf cookies the API needs.
   const cookie = raw.split(/,(?=[^;]+=[^;]+;)/).map(c => c.split(';')[0].trim())
@@ -29,9 +30,9 @@ async function getCookie(base, signal) {
 
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.VINTED_BASE || 'https://www.vinted.co.uk';
-  const cookie = await getCookie(base, signal);
+  const cookie = await getCookie(base, signal, env);
   const url = `${base}/api/v2/catalog/items?search_text=${encodeURIComponent(query)}&per_page=${Math.min(40, limit)}&order=newest_first`;
-  const res = await fetch(url, {
+  const res = await scrapeFetch(url, {
     signal,
     headers: {
       'User-Agent': UA,
@@ -39,7 +40,7 @@ export async function search({ query, limit = 30, env, signal }) {
       'Cookie': cookie,
       'Referer': base + '/'
     }
-  });
+  }, env);
   if (!res.ok) throw new Error(`Vinted API returned ${res.status} (anti-bot or shape change)`);
   const j = await res.json();
   return mapItems(j, base);

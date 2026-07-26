@@ -7,6 +7,7 @@
 
 import * as cheerio from 'cheerio';
 import { normalize, parseMoney, detectCurrency } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const DEFAULT_OAUTH = 'https://api.ebay.com/identity/v1/oauth2/token';
 const DEFAULT_SEARCH = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
@@ -104,7 +105,7 @@ export function _mapItemsForTest(json) {
 async function searchScrape({ query, limit = 30, env, signal }) {
   const base = env.EBAY_WEB_BASE || 'https://www.ebay.co.uk';
   const url = `${base}/sch/i.html?_nkw=${encodeURIComponent(query)}&_sop=10&_ipg=60`;
-  const res = await fetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   if (!res.ok) throw new Error(`eBay search page returned ${res.status} (no API keys set — using scrape fallback)`);
   const html = await res.text();
   return parseSearch(html, base).slice(0, limit);

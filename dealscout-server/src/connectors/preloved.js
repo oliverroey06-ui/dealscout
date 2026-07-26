@@ -3,6 +3,7 @@
 
 import * as cheerio from 'cheerio';
 import { normalize, parseMoney } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'preloved', label: 'Preloved', kind: 'scrape' };
@@ -10,7 +11,7 @@ export const meta = { id: 'preloved', label: 'Preloved', kind: 'scrape' };
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.PRELOVED_BASE || 'https://www.preloved.co.uk';
   const url = `${base}/search?keyword=${encodeURIComponent(query)}`;
-  const res = await fetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   if (!res.ok) throw new Error(`Preloved returned ${res.status}`);
   return parse(await res.text(), base).slice(0, limit);
 }

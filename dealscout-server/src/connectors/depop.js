@@ -3,6 +3,7 @@
 // about field names because Depop has shipped a few shapes over time.
 
 import { normalize, parseMoney } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'depop', label: 'Depop', kind: 'scrape' };
@@ -10,7 +11,7 @@ export const meta = { id: 'depop', label: 'Depop', kind: 'scrape' };
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.DEPOP_API || 'https://webapi.depop.com';
   const url = `${base}/api/v3/search/products/?what=${encodeURIComponent(query)}&itemsPerPage=${Math.min(40, limit)}`;
-  const res = await fetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'application/json' } });
+  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'application/json' } }, env);
   if (!res.ok) throw new Error(`Depop API returned ${res.status}`);
   return parse(await res.json()).slice(0, limit);
 }

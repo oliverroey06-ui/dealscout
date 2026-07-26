@@ -10,8 +10,13 @@ import { parse as parseGumtree } from '../src/connectors/gumtree.js';
 import { parse as parseDepop } from '../src/connectors/depop.js';
 import { parse as parsePreloved } from '../src/connectors/preloved.js';
 import { _mapCardForTest as mapFbCard } from '../src/connectors/facebook.js';
+import { parse as parseAliexpress } from '../src/connectors/aliexpress.js';
+import { parse as parseDhgate } from '../src/connectors/dhgate.js';
+import { parse as parseAlibaba } from '../src/connectors/alibaba.js';
+import { parse as parseSuperbuy } from '../src/connectors/superbuy.js';
+import { parse as parseCssbuy } from '../src/connectors/cssbuy.js';
 import { scoreScan, buildBand } from '../src/valuation.js';
-import { normalize, parseMoney } from '../src/normalize.js';
+import { normalize, parseMoney, toGBP } from '../src/normalize.js';
 
 const dir = dirname(fileURLToPath(import.meta.url));
 const fx = (f) => readFileSync(join(dir, 'fixtures', f), 'utf8');
@@ -140,4 +145,66 @@ test('cross-source scan merges and ranks', () => {
   const scored = scoreScan([...a, ...b]).sort((x, y) => y.valuation.score - x.valuation.score);
   assert.equal(scored.length, 9);
   assert.ok(scored[0].valuation.score >= scored[scored.length - 1].valuation.score);
+});
+
+// ---- China group ----
+const near = (a, b, t = 0.02) => Math.abs(a - b) < t;
+
+test('toGBP converts USD/CNY and honours env overrides', () => {
+  assert.ok(near(toGBP(100, 'USD'), 79));
+  assert.ok(near(toGBP(100, 'CNY'), 11));
+  assert.equal(toGBP(100, 'GBP'), 100);
+  assert.ok(near(toGBP(100, 'USD', { FX_USD_GBP: '0.80' }), 80), 'env override wins');
+  assert.equal(toGBP('Free', 'USD'), null);
+});
+
+test('AliExpress parser maps embedded itemList to GBP', () => {
+  const items = parseAliexpress(JSON.parse(fx('aliexpress.json')));
+  assert.equal(items.length, 2);
+  const f = items[0];
+  assert.equal(f.source, 'aliexpress');
+  assert.equal(f.currency, 'GBP');
+  assert.ok(near(f.price, 12.99 * 0.79), `£${f.price}`);
+  assert.match(f.url, /aliexpress\.com\/item\/1005006123456789/);
+  assert.match(f.title, /Earbuds/);
+  assert.equal(f.seller.name, 'TopAudio Official Store');
+  assert.equal(f.engagement.watchers, 3456);
+  assert.match(f.image, /^https:/);
+});
+
+test('DHgate parser scrapes items (USD → GBP)', () => {
+  const items = parseDhgate(fx('dhgate.html'));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].source, 'dhgate');
+  assert.ok(near(items[0].price, 28.5 * 0.79), `£${items[0].price}`);
+  assert.match(items[0].url, /^https:\/\/www\.dhgate\.com\/product\//);
+  assert.match(items[0].title, /Keyboard/);
+});
+
+test('Alibaba parser takes the low end of the price range', () => {
+  const items = parseAlibaba(fx('alibaba.html'));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].source, 'alibaba');
+  assert.ok(near(items[0].price, 1.20 * 0.79), `£${items[0].price}`);
+  assert.equal(items[0].seller.name, 'Best Garment Co., Ltd.');
+  assert.match(items[0].url, /product-detail/);
+});
+
+test('Superbuy parser maps agent JSON (CNY → GBP)', () => {
+  const items = parseSuperbuy(JSON.parse(fx('superbuy.json')));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].source, 'superbuy');
+  assert.ok(near(items[0].price, 89 * 0.11), `£${items[0].price}`);
+  assert.match(items[0].title, /Anime/);
+  assert.ok(items[0].url && items[0].url.length > 0, 'has an outbound url');
+  assert.equal(items[0].engagement.watchers, 120);
+});
+
+test('CSSbuy parser maps agent JSON (CNY → GBP)', () => {
+  const items = parseCssbuy(JSON.parse(fx('cssbuy.json')));
+  assert.equal(items.length, 2);
+  assert.equal(items[0].source, 'cssbuy');
+  assert.ok(near(items[0].price, 119 * 0.11), `£${items[0].price}`);
+  assert.match(items[0].url, /555001/);
+  assert.match(items[0].title, /Hoodie/);
 });

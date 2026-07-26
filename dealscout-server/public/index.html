@@ -274,21 +274,42 @@ const CUR={GBP:'£',EUR:'€',USD:'$',CAD:'C$',AUD:'A$',JPY:'¥'};
 const money=(n,c)=>n==null?'—':(CUR[c]||(c?c+' ':'£'))+Math.round(n).toLocaleString('en-GB');
 const EG=['rtx 3080','fender stratocaster','dyson v11','lego millennium falcon','sony a7 iii','steam deck oled'];
 
-const state={sources:[],selected:new Set(),listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null};
+const state={sources:[],selected:new Set(),group:'local',listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null};
 
 /* ---- sources ---- */
 async function loadSources(){
   try{
     const r=await fetch('/api/sources');const j=await r.json();
     state.sources=j.sources;
-    j.sources.forEach(s=>{if(s.enabled)state.selected.add(s.id)});
-    renderSources();
+    selectGroup(state.group);   // scope selection to the active region filter
   }catch(e){ toast('Could not reach the DealScout server.'); }
+}
+function sourcesInGroup(g){ return state.sources.filter(s=>(s.group||'local')===g); }
+function selectGroup(g){
+  state.group=g;
+  state.selected=new Set(sourcesInGroup(g).filter(s=>s.enabled).map(s=>s.id));
+  renderSources();
 }
 function renderSources(){
   const row=$('#sourcerow');
-  row.querySelectorAll('.src,.src-note').forEach(n=>n.remove());
-  state.sources.forEach(s=>{
+  row.querySelectorAll('.src,.src-note,.grpwrap').forEach(n=>n.remove());
+  // region toggle: Local | China (only if both groups exist)
+  const groups=[...new Set(state.sources.map(s=>s.group||'local'))];
+  const order=['local','china'].filter(g=>groups.includes(g));
+  if(order.length>1){
+    const wrap=document.createElement('span');wrap.className='grpwrap';
+    wrap.style.cssText='display:inline-flex;gap:2px;margin-right:12px;background:var(--acc-wash,#eef1ff);border:1px solid var(--acc,#ccd4f2);border-radius:8px;padding:2px';
+    order.forEach(g=>{
+      const b=document.createElement('button');const on=state.group===g;
+      b.textContent=g==='china'?'China':'Local';
+      b.title=g==='china'?'Import from China — AliExpress, DHgate, Alibaba, agents (prices approx GBP)':'UK resale marketplaces';
+      b.style.cssText='border:0;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600;border-radius:6px;padding:4px 14px;transition:.12s;'+(on?'background:var(--acc-deep,#3355dd);color:#fff':'background:transparent;color:var(--ink-3,#667)');
+      b.addEventListener('click',()=>{ if(state.group!==g)selectGroup(g); });
+      wrap.appendChild(b);
+    });
+    row.appendChild(wrap);
+  }
+  sourcesInGroup(state.group).forEach(s=>{
     const el=document.createElement('button');
     el.className='src'+(state.selected.has(s.id)?' on':'');
     const dot=s.ready?'':(s.id==='facebook'?'off':'warn');
@@ -298,9 +319,9 @@ function renderSources(){
     el.addEventListener('click',()=>{ if(state.selected.has(s.id))state.selected.delete(s.id); else state.selected.add(s.id); renderSources(); });
     row.appendChild(el);
   });
-  // filter-by-source checkboxes mirror
+  // filter-by-source checkboxes mirror the active group
   const fs=$('#fsources');fs.querySelectorAll('.fcheck').forEach(n=>n.remove());
-  state.sources.forEach(s=>{
+  sourcesInGroup(state.group).forEach(s=>{
     const lb=document.createElement('label');lb.className='fcheck';
     lb.innerHTML='<input type="checkbox" data-fsrc="'+s.id+'" checked> '+esc(s.label);
     fs.appendChild(lb);
@@ -357,8 +378,18 @@ function renderStatus(j){
     const rej=j.band.rejected>0?j.band.rejected+' outlier'+(j.band.rejected===1?'':'s')+' excluded. ':'';
     bandChip='<span class="bandchip'+(loose?' loose':'')+'" title="'+rej+(loose?'Wide range — your search matched a mix of items. Try a more specific model for a tighter estimate.':'The going price across real listings for this search, after removing bundles/mis-listings.')+'">going rate '+money(j.band.lo,cur)+'–'+money(j.band.hi,cur)+(loose?' · broad search':'')+'</span>';
   }
+  const failed=j.sources.filter(s=>!s.ok);
+  let note='';
+  if(failed.length){
+    const ebayNoKeys=failed.find(s=>s.source==='ebay'&&/no API keys|403/i.test(s.error||''));
+    const others=failed.filter(s=>s.source!=='ebay');
+    const bits=['<b>'+failed.length+'</b> source'+(failed.length===1?'':'s')+' blocked this scan — hover a red tag for the exact reason.'];
+    if(ebayNoKeys)bits.push('eBay only needs its free API keys: set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET and it works from any server.');
+    if(others.length)bits.push('The others block cloud/datacenter IPs on purpose — running DealScout from your own computer (a home connection) recovers most of them; no code change makes a server IP look residential.');
+    note='<div class="status-note" style="flex-basis:100%;margin-top:7px;font-size:12.5px;color:#64707d;line-height:1.55;max-width:70ch">'+bits.join(' ')+'</div>';
+  }
   sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+bandChip+pills+
-    '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>';
+    '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>'+note;
   $('#sort').value=state.sort;
   $('#sort').addEventListener('change',e=>{state.sort=e.target.value;applyFilters();});
 }

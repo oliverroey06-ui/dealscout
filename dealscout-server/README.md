@@ -90,20 +90,48 @@ docker build -t dealscout .
 docker run -p 8080:8080 --env-file .env dealscout
 ```
 
-### ⚠️ The cloud caveat for the four scrapers
+### Making the scrapers work on a hosted server (residential proxy)
 
 Marketplaces block **datacenter / cloud IPs** far faster than home connections.
-eBay (official API) is unaffected. The four scrapers may work intermittently or
-get blocked outright from a cloud host. Options, in order of effort:
+The eBay official API is unaffected, but every scraper source (Vinted, Depop,
+StockX, the whole China group, …) can be 403'd from a cloud host like Render.
 
-- Run the scrapers through a **residential proxy** (set `HTTPS_PROXY` for the
-  process, or add a proxy agent per connector).
-- Keep **eBay on in the cloud** (rock solid) and run the **scrapers from a
-  machine on a home connection** when you need them.
-- Accept that scraper hit-rates are lower from the cloud and lean on eBay.
+DealScout has **built-in residential-proxy support** for exactly this. Sign up
+with a residential-proxy provider (Bright Data, Smartproxy, IPRoyal, Oxylabs, …)
+and set one env var on your host:
 
-This is a property of the marketplaces, not of DealScout — no code change makes a
-datacenter IP look residential.
+```
+SCRAPER_PROXY_URL=http://USER:PASS@gateway.provider.com:7777
+```
+
+Every scraper request then tunnels through a residential IP, so the hosted site
+returns what a home browser would — while the eBay API and your Stripe / Twilio
+calls stay **direct** (the proxy is scraper-only, so you don't burn proxy
+bandwidth on traffic that doesn't need it). It's strictly opt-in: with nothing
+set, fetches go direct. Confirm what your server reaches with:
+
+```
+npm run diagnose "nike air max 90"     # header shows "via residential proxy" when on
+```
+
+Prefer not to pay for a proxy? Run DealScout **on a home connection**
+(`RUN-LOCAL.bat` or a home box), where the scrapers work directly, or lean on
+**eBay** (official API, free, reliable from any host) as the backbone.
+
+No code makes a datacenter IP *look* residential — that's a property of the
+marketplaces, not of DealScout — but routing through a residential proxy is the
+standard way a hosted product gets the same result your own browser would.
+
+**See exactly what works from where you're running:**
+
+```bash
+npm run diagnose "nike air max 90"     # hits every source live, prints count or the real error
+```
+
+From a datacenter/cloud IP you'll see `403 blocked` on most sources; from a home
+connection far more of them return results. eBay is the exception — set its
+official API keys (below) and it returns results from **any** host, because the
+Browse API is sanctioned and doesn't care about your IP.
 
 ---
 
@@ -180,11 +208,33 @@ cookies. `.env.example` lists every variable.
 | Preloved        | Server-HTML scrape         | premium | ★★★ best-effort |
 | FB Marketplace  | Playwright, logged-in      | **off** | ★ fragile, ToS, needs a session |
 
-`core` sources are available on every plan; `premium` resale connectors unlock on
-**Elite**. All are genuine second-hand/resale marketplaces for authentic goods.
-Like eBay's scrape path, the premium connectors are bot-protected and will often
-be blocked from a datacenter IP — they work best from a residential connection or
-via each site's official API.
+The sources above are the **Local** group (UK resale). `core` is available on
+every plan; the rest unlock on **Elite**. All are genuine second-hand/resale
+marketplaces for authentic goods.
+
+### China group (import)
+
+A second region filter, **China**, scans overseas sources for buying/importing.
+Prices are converted to **approximate GBP** (static rates in `normalize.js`,
+override any with `FX_USD_GBP`, `FX_CNY_GBP`, …) so a China scan is comparable in
+one value band.
+
+| Source     | Method                              | What it is |
+|------------|-------------------------------------|------------|
+| AliExpress | Embedded search JSON                 | retail marketplace, ships worldwide |
+| DHgate     | Server-HTML scrape                   | wholesale/retail marketplace |
+| Alibaba    | Server-HTML scrape (low end of range) | B2B wholesale (per-unit, MOQ) |
+| Superbuy   | Agent search JSON (Taobao/Weidian)   | buying + parcel-forwarding agent |
+| CSSbuy     | Agent search JSON (undocumented)     | buying + forwarding agent (least reliable) |
+
+The whole China group is **Elite-tier**. Like the premium resale connectors it's
+bot-protected — AliExpress and Alibaba block datacenter IPs especially hard — so
+expect it to work best from a residential connection (`RUN-LOCAL.bat`) rather than
+a cloud host. Run `npm run diagnose "<query>" aliexpress,dhgate,alibaba,superbuy,cssbuy`
+to see exactly what your connection reaches.
+
+Like eBay's scrape path, every non-API connector is best-effort and can need a
+selector/endpoint update when a site changes its markup.
 
 The UI shows a live status pill per source after each scan (count or error), so
 you always know which ones responded.

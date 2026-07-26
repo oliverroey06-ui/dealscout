@@ -5,6 +5,7 @@
 
 import * as cheerio from 'cheerio';
 import { normalize, parseMoney } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 
@@ -13,7 +14,7 @@ export const meta = { id: 'gumtree', label: 'Gumtree', kind: 'scrape' };
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.GUMTREE_BASE || 'https://www.gumtree.com';
   const url = `${base}/search?search_category=all&q=${encodeURIComponent(query)}&sort=date`;
-  const res = await fetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   if (!res.ok) throw new Error(`Gumtree returned ${res.status}`);
   const html = await res.text();
   return parse(html, base).slice(0, limit);

@@ -45,7 +45,8 @@ const check = (cond, msg) => { if (!cond) { failed++; console.log('  ✗ ' + msg
 
 // /api/sources
 const sources = await (await fetch(`${base}/api/sources`)).json();
-check(sources.sources.length === 10, 'sources endpoint lists all 10 connectors');
+check(sources.sources.length === 15, 'sources endpoint lists all 15 connectors');
+check(sources.sources.filter(s => s.group === 'china').length === 5, 'five sources tagged as the China group');
 check(sources.sources.find(s => s.id === 'ebay').ready === true, 'eBay reports ready when keys present');
 check(sources.sources.find(s => s.id === 'facebook').ready === false, 'Facebook reports not-ready by default');
 

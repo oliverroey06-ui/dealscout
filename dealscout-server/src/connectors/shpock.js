@@ -6,6 +6,7 @@
 
 import * as cheerio from 'cheerio';
 import { normalize, parseMoney, detectCurrency } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 
@@ -14,7 +15,7 @@ export const meta = { id: 'shpock', label: 'Shpock', kind: 'scrape' };
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.SHPOCK_BASE || 'https://www.shpock.com';
   const url = `${base}/en-gb/results?q=${encodeURIComponent(query)}`;
-  const res = await fetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } });
+  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   if (!res.ok) throw new Error(`Shpock returned ${res.status}`);
   const html = await res.text();
   return parse(html, base).slice(0, limit);

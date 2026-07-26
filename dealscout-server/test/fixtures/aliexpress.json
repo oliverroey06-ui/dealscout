@@ -1,0 +1,24 @@
+{
+  "mods": {
+    "itemList": {
+      "content": [
+        {
+          "productId": "1005006123456789",
+          "title": { "displayTitle": "Wireless Bluetooth Earbuds TWS Pro Noise Cancelling" },
+          "prices": { "salePrice": { "minPrice": "12.99", "currencyCode": "USD" } },
+          "image": { "imgUrl": "//ae01.alicdn.com/kf/earbuds.jpg" },
+          "store": { "storeName": "TopAudio Official Store" },
+          "trade": { "tradeDesc": "3,456 sold" }
+        },
+        {
+          "productId": "1005006987654321",
+          "title": { "displayTitle": "USB C to USB C Cable 100W 2m Braided Fast Charge" },
+          "prices": { "salePrice": { "minPrice": "3.20", "currencyCode": "USD" } },
+          "image": { "imgUrl": "//ae01.alicdn.com/kf/cable.jpg" },
+          "store": { "storeName": "CableWorld" },
+          "trade": { "tradeDesc": "12,001 sold" }
+        }
+      ]
+    }
+  }
+}

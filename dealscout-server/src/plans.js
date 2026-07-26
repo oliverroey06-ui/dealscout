@@ -6,10 +6,17 @@
 // `comingSoon` so the UI can show them per-tier honestly without pretending they
 // are powered.
 
-// Marketplace groupings. "core" is available to everyone; "premium" (genuine
-// resale connectors) unlocks on Elite. Facebook stays a special local-only case.
+// Marketplace groupings. Two orthogonal axes:
+//   • tier:  "core" is available to everyone; "premium" unlocks on Elite.
+//   • region: "local" (UK resale) vs "china" (import) — the two UI filters.
+// core sources are all local. Premium = the extra resale connectors + every
+// China source (importing is an Elite feature). Facebook stays a local-only case.
 export const CORE_SOURCES = ['ebay', 'vinted', 'gumtree', 'shpock'];
-export const PREMIUM_SOURCES = ['stockx', 'depop', 'grailed', 'vestiaire', 'preloved'];
+export const CHINA_SOURCES = ['aliexpress', 'dhgate', 'alibaba', 'superbuy', 'cssbuy'];
+export const PREMIUM_SOURCES = ['stockx', 'depop', 'grailed', 'vestiaire', 'preloved', ...CHINA_SOURCES];
+
+// Which region-filter a source belongs to.
+export function sourceGroup(id) { return CHINA_SOURCES.includes(id) ? 'china' : 'local'; }
 
 export const PLANS = {
   free: {

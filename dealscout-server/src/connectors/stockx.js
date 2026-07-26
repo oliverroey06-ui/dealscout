@@ -3,6 +3,7 @@
 // so treat as best-effort. Prices use the current lowest ask.
 
 import { normalize, parseMoney } from '../normalize.js';
+import { scrapeFetch } from '../net.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'stockx', label: 'StockX', kind: 'scrape' };
@@ -10,10 +11,10 @@ export const meta = { id: 'stockx', label: 'StockX', kind: 'scrape' };
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.STOCKX_BASE || 'https://stockx.com';
   const url = `${base}/api/browse?_search=${encodeURIComponent(query)}&page=1`;
-  const res = await fetch(url, {
+  const res = await scrapeFetch(url, {
     signal,
     headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Referer': base + '/', 'app-platform': 'Iron', 'x-requested-with': 'XMLHttpRequest' },
-  });
+  }, env);
   if (!res.ok) throw new Error(`StockX returned ${res.status} (bot-protected — usually needs a residential IP or official API)`);
   return parse(await res.json(), base).slice(0, limit);
 }
