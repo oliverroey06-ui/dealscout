@@ -382,10 +382,15 @@ function renderStatus(j){
   let note='';
   if(failed.length){
     const ebayNoKeys=failed.find(s=>s.source==='ebay'&&/no API keys|403/i.test(s.error||''));
-    const others=failed.filter(s=>s.source!=='ebay');
-    const bits=['<b>'+failed.length+'</b> source'+(failed.length===1?'':'s')+' blocked this scan — hover a red tag for the exact reason.'];
-    if(ebayNoKeys)bits.push('eBay only needs its free API keys: set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET and it works from any server.');
-    if(others.length)bits.push('The others block cloud/datacenter IPs on purpose — running DealScout from your own computer (a home connection) recovers most of them; no code change makes a server IP look residential.');
+    const needsKeys=failed.filter(s=>/needs GRAILED|ALGOLIA/i.test(s.error||''));
+    const rest=failed.filter(s=>s.source!=='ebay'&&!needsKeys.includes(s));
+    const blocked=rest.filter(s=>/403|429|blocked|bot-protected/i.test(s.error||''));
+    const unreadable=rest.filter(s=>!blocked.includes(s)&&/could not find|markup|not JSON|script-only|no readable/i.test(s.error||''));
+    const bits=['<b>'+failed.length+'</b> source'+(failed.length===1?'':'s')+' returned nothing — hover a red tag for each exact reason.'];
+    if(ebayNoKeys)bits.push('eBay just needs its free API keys (EBAY_CLIENT_ID / EBAY_CLIENT_SECRET) and then works from any server.');
+    if(blocked.length)bits.push(blocked.length+' refused the request (bot protection): on a hosted server set SCRAPER_PROXY_URL (residential proxy); from a home connection most open up, though StockX / Vestiaire / Depop can resist any plain server fetch.');
+    if(unreadable.length)bits.push(unreadable.length+' responded but the page couldn’t be read server-side (script-only or changed markup).');
+    if(needsKeys.length)bits.push('Grailed needs its free Algolia keys (see README).');
     note='<div class="status-note" style="flex-basis:100%;margin-top:7px;font-size:12.5px;color:#64707d;line-height:1.55;max-width:70ch">'+bits.join(' ')+'</div>';
   }
   sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+bandChip+pills+

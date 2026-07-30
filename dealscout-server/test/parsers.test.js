@@ -181,6 +181,16 @@ test('DHgate parser scrapes items (USD → GBP)', () => {
   assert.match(items[0].title, /Keyboard/);
 });
 
+test('DHgate redesigned markup (2026 classes) still parses via link-walk fallback', () => {
+  const items = parseDhgate(fx('dhgate-2026.html'));
+  assert.equal(items.length, 3, 'all three cards found despite unknown class names');
+  assert.ok(near(items[0].price, 8.42 * 0.79), `USD converted: £${items[0].price}`);
+  assert.equal(items[1].price, 6.3, '£ price kept as GBP, not converted');
+  assert.match(items[0].title, /Casual Shirt/);
+  assert.match(items[0].url, /^https:\/\/www\.dhgate\.com\/product\//);
+  assert.match(items[0].image, /^https:/);
+});
+
 test('Alibaba parser takes the low end of the price range', () => {
   const items = parseAlibaba(fx('alibaba.html'));
   assert.equal(items.length, 2);

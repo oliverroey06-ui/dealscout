@@ -42,6 +42,14 @@ if not exist "node_modules" (
     echo.
 )
 
+rem --- Keep dependencies in step when the app has been updated ---
+if exist "node_modules" if not exist "node_modules\undici" (
+    echo  Update detected - fetching new building blocks...
+    set "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1"
+    call npm install --omit=optional
+    echo.
+)
+
 rem --- Give eBay keys a home (optional; the app runs fine without them) ---
 if not exist ".env" if exist ".env.example" copy /y ".env.example" ".env" >nul
 

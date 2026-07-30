@@ -6,6 +6,7 @@
 import * as cheerio from 'cheerio';
 import { normalize, toGBP } from '../normalize.js';
 import { scrapeFetch } from '../net.js';
+import { harvest } from './harvest.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'alibaba', label: 'Alibaba', kind: 'scrape', group: 'china' };
@@ -33,7 +34,7 @@ export function parse(html, env = null) {
     if (img && img.startsWith('//')) img = 'https:' + img;
     out.push(normalize('alibaba', {
       title, url, image: img,
-      price: toGBP(first, 'USD', env),
+      price: priceText.includes('£') ? first : toGBP(first, 'USD', env),
       currency: 'GBP',
       condition: 'New', location: 'China',
       seller: { name: $el.find('.supplier a, .organic-gallery-offer__seller a').first().text().trim() || null, ratingPct: null, sales: null },
@@ -41,5 +42,16 @@ export function parse(html, env = null) {
       hasDescription: true,
     }));
   });
-  return out.filter(Boolean);
+  const legacy = out.filter(Boolean);
+  if (legacy.length) return legacy;
+  // Class names changed — link-walk fallback. Alibaba is B2B: prices are per-unit
+  // low-end of a range, which the harvester's first-price match already picks.
+  return harvest(html, { linkPatterns: '/product-detail/' }).map(c => normalize('alibaba', {
+    title: c.title, url: c.href, image: c.image,
+    price: c.currency === 'GBP' ? c.amount : toGBP(c.amount, c.currency, env),
+    currency: 'GBP', condition: 'New', location: 'China',
+    seller: { name: null, ratingPct: null, sales: null },
+    engagement: { favourites: null, watchers: null },
+    hasDescription: true,
+  })).filter(Boolean);
 }

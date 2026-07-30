@@ -4,6 +4,7 @@
 import * as cheerio from 'cheerio';
 import { normalize, parseMoney } from '../normalize.js';
 import { scrapeFetch } from '../net.js';
+import { harvest } from './harvest.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'preloved', label: 'Preloved', kind: 'scrape' };
@@ -40,6 +41,14 @@ export function parse(html, base = 'https://www.preloved.co.uk') {
     }));
   });
   const seen = new Set();
-  return out.filter(l => l && !seen.has(l.url) && seen.add(l.url));
+  const legacy = out.filter(l => l && !seen.has(l.url) && seen.add(l.url));
+  if (legacy.length) return legacy;
+  // Selector drift — link-walk fallback over advert links.
+  return harvest(html, { linkPatterns: ['/adverts/', '/classified/'] }).map(c => normalize('preloved', {
+    title: c.title, url: c.href.startsWith('http') ? c.href : base + c.href, image: c.image,
+    price: c.amount, currency: 'GBP', shipping: null, condition: null, location: null,
+    seller: { name: null, ratingPct: null, sales: null },
+    hasDescription: false,
+  })).filter(Boolean);
 }
 function clean(s) { return (s || '').replace(/\s+/g, ' ').trim(); }

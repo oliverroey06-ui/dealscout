@@ -5,6 +5,7 @@
 
 import { normalize, toGBP } from '../normalize.js';
 import { scrapeFetch } from '../net.js';
+import { harvest } from './harvest.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'aliexpress', label: 'AliExpress', kind: 'scrape', group: 'china' };
@@ -14,9 +15,23 @@ export async function search({ query, limit = 30, env, signal }) {
   const url = `${base}/wholesale?trafficChannel=main&SearchText=${encodeURIComponent(query)}&g=y`;
   const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9' } }, env);
   if (!res.ok) throw new Error(`AliExpress returned ${res.status} (bot-protected — usually needs a residential IP)`);
-  const json = extractJson(await res.text());
-  if (!json) throw new Error('AliExpress: could not find embedded results (markup changed or challenged)');
-  return parse(json, env).slice(0, limit);
+  const html = await res.text();
+  // 1) embedded search JSON (richest), 2) link-walk over SSR'd item anchors.
+  const json = extractJson(html);
+  if (json) {
+    const items = parse(json, env).slice(0, limit);
+    if (items.length) return items;
+  }
+  const walked = harvest(html, { linkPatterns: '/item/' }).map(c => normalize('aliexpress', {
+    title: c.title, url: c.href, image: c.image,
+    price: c.currency === 'GBP' ? c.amount : toGBP(c.amount, c.currency, env),
+    currency: 'GBP', condition: 'New', location: 'China',
+    seller: { name: null, ratingPct: null, sales: null },
+    engagement: { favourites: null, watchers: null },
+    hasDescription: true,
+  })).filter(Boolean).slice(0, limit);
+  if (walked.length) return walked;
+  throw new Error('AliExpress served a script-only page (no readable results in the HTML) — a plain server fetch can’t read it; it works via a browser, and on a hosted server usually needs the residential proxy');
 }
 
 // Pull the first balanced JSON object assigned to one of AliExpress's globals.
