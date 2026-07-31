@@ -1,22 +1,42 @@
 {
-  "state": { "code": 0 },
+  "state": 0,
+  "msg": "",
+  "serverTime": 1785456518259,
   "data": {
-    "list": [
+    "datas": [
       {
-        "goodsId": "789012",
-        "title": "Anime Figure Model 20cm PVC Collectible Statue",
-        "price": "89.00",
-        "picUrl": "//img.superbuy.com/figure.jpg",
-        "shopName": "Hobby Collect Shop",
-        "sales": "120"
-      },
-      {
-        "goodsId": "789013",
-        "title": "Automatic Mechanical Watch Skeleton Stainless Steel",
-        "price": "350.00",
-        "picUrl": "//img.superbuy.com/watch.jpg",
-        "shopName": "TimeKeeper Store",
-        "sales": "45"
+        "id": "86103055-fc4c-4cc6-b72b-12dc0bdad9fb",
+        "providerType": "ALIMAMA",
+        "intResults": [
+          {
+            "goodsId": "918747219313",
+            "goodsUrl": "https://item.taobao.com/item.htm?id=918747219313",
+            "imgUrl": "//img.alicdn.com/imgextra/i3/hoodie1.jpg",
+            "price": 5.61,
+            "title": "Cross-border 2024 hooded sweater ruffian handsome loose fit",
+            "titleCn": "跨境2024连帽卫衣",
+            "shop": { "name": "CoolStreet Store" },
+            "popularity": 3,
+            "statusText": "120 people pay",
+            "providerType": "TB",
+            "platformName": "淘宝网",
+            "symbol": "US $"
+          },
+          {
+            "goodsId": "918747219999",
+            "goodsUrl": "https://item.taobao.com/item.htm?id=918747219999",
+            "imgUrl": "//img.alicdn.com/imgextra/i1/hoodie2.jpg",
+            "price": 8.01,
+            "title": "Trendy white thin sun-protective cardigan long sleeve",
+            "titleCn": "防晒开衫",
+            "shop": { "name": "SunWear" },
+            "popularity": 0,
+            "statusText": "45 people pay",
+            "providerType": "TB",
+            "platformName": "淘宝网",
+            "symbol": "US $"
+          }
+        ]
       }
     ]
   }

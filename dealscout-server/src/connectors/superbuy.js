@@ -1,6 +1,9 @@
-// Superbuy connector — unofficial. Superbuy is a Taobao/Weidian buying + parcel-
-// forwarding agent; its search proxies those Chinese platforms through an internal
-// JSON API. Prices (CNY) → approx GBP. Best-effort, bot-protected, subject to ToS.
+// Superbuy connector — searches Taobao/Tmall through Superbuy's own search API:
+//   POST front.superbuy.com/crawler/search-product   (form-encoded)
+// discovered by watching the real site's network traffic in a browser. Verified
+// to work ANONYMOUSLY — no Superbuy account or cookies needed. Each result links
+// to Superbuy's agent checkout wrapping the underlying Taobao listing, so a user
+// can buy it through the agent. Prices are requested in USD → approx GBP.
 
 import { normalize, toGBP } from '../normalize.js';
 import { scrapeFetch } from '../net.js';
@@ -10,34 +13,45 @@ export const meta = { id: 'superbuy', label: 'Superbuy', kind: 'scrape', group: 
 
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.SUPERBUY_BASE || 'https://front.superbuy.com';
-  const url = `${base}/search/api/list?keyword=${encodeURIComponent(query)}&page=1&pageSize=${Math.min(40, limit)}&platform=taobao&o=`;
-  const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Referer': 'https://www.superbuy.com/' } }, env);
-  if (!res.ok) throw new Error(`Superbuy returned ${res.status} (agent search is bot-protected)`);
-  return parse(await res.json(), env).slice(0, limit);
+  const size = String(Math.min(40, limit));
+  const body = new URLSearchParams({
+    keyword: query, platform: 'taobao', pageNo: '1', toPage: '1',
+    pageSize: size, perPageSize: size, currency: 'USD', translate: '1',
+  }).toString();
+  const res = await scrapeFetch(`${base}/crawler/search-product`, {
+    method: 'POST', signal,
+    headers: {
+      'User-Agent': UA, 'Accept': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Referer': 'https://www.superbuy.com/',
+    },
+    body,
+  }, env);
+  if (!res.ok) throw new Error(`Superbuy returned ${res.status}`);
+  let j; try { j = await res.json(); } catch { throw new Error('Superbuy: non-JSON response (endpoint changed or challenged)'); }
+  return parse(j, env).slice(0, limit);
 }
 
 export function parse(json, env = null) {
-  const list = json?.data?.list || json?.data?.goodsList || json?.list || [];
-  return (Array.isArray(list) ? list : []).map((it) => {
-    const id = it.goodsId || it.itemId || it.id || it.tao_id;
-    let img = it.picUrl || it.pic || it.imgUrl || it.image || null;
+  const items = json?.data?.datas?.[0]?.intResults || [];
+  return (Array.isArray(items) ? items : []).map((it) => {
+    const taobao = it.goodsUrl || (it.goodsId ? `https://item.taobao.com/item.htm?id=${it.goodsId}` : null);
+    let img = it.imgUrl || null;
     if (img && img.startsWith('//')) img = 'https:' + img;
-    const taobao = id ? `https://item.taobao.com/item.htm?id=${id}` : null;
-    const link = it.superbuyUrl || it.goodsUrl ||
-      (taobao ? `https://www.superbuy.com/en/page/buy/?url=${encodeURIComponent(taobao)}` : null);
+    const sold = Number(String(it.statusText || '').replace(/[^0-9]/g, ''));
     return normalize('superbuy', {
-      id,
-      title: it.title || it.goodsName || it.name || '',
-      url: link,
+      id: it.goodsId,
+      title: it.title || it.titleCn || '',
+      url: taobao ? `https://www.superbuy.com/en/page/buy/?url=${encodeURIComponent(taobao)}` : null,
       image: img,
-      price: toGBP(it.price ?? it.promotionPrice ?? it.shopPrice, 'CNY', env),
+      price: toGBP(it.price, 'USD', env),
       currency: 'GBP',
+      shipping: null,
       condition: null,
-      location: 'China (via agent)',
-      seller: { name: it.shopName || null, ratingPct: null, sales: null },
-      engagement: { favourites: null, watchers: numOr(it.sales) },
+      location: 'China (via Superbuy agent)',
+      seller: { name: it.shop?.name || it.shop?.shopName || null, ratingPct: null, sales: null },
+      engagement: { favourites: null, watchers: isFinite(sold) && sold > 0 ? sold : (Number(it.popularity) > 0 ? Number(it.popularity) : null) },
       hasDescription: false,
     });
   }).filter(Boolean);
 }
-function numOr(v) { const n = Number(v); return isFinite(n) ? n : null; }

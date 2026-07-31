@@ -201,14 +201,16 @@ test('Alibaba parser takes the low end of the price range', () => {
   assert.match(items[0].url, /product-detail/);
 });
 
-test('Superbuy parser maps agent JSON (CNY → GBP)', () => {
+test('Superbuy parser maps the real crawler/search-product shape (USD → GBP)', () => {
   const items = parseSuperbuy(JSON.parse(fx('superbuy.json')));
   assert.equal(items.length, 2);
   assert.equal(items[0].source, 'superbuy');
-  assert.ok(near(items[0].price, 89 * 0.11), `£${items[0].price}`);
-  assert.match(items[0].title, /Anime/);
-  assert.ok(items[0].url && items[0].url.length > 0, 'has an outbound url');
-  assert.equal(items[0].engagement.watchers, 120);
+  assert.ok(near(items[0].price, 5.61 * 0.79), `£${items[0].price}`);
+  assert.match(items[0].title, /hooded sweater/);
+  assert.match(items[0].url, /superbuy\.com\/en\/page\/buy\/\?url=.+item\.taobao\.com/);
+  assert.equal(items[0].engagement.watchers, 120, 'sales parsed from statusText');
+  assert.equal(items[0].seller.name, 'CoolStreet Store');
+  assert.match(items[0].image, /^https:/);
 });
 
 test('Amazon parser keeps only discounted items with % off', () => {

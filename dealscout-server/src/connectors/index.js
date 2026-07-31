@@ -49,7 +49,7 @@ export function sourceStatus(env) {
       if (hasEbayKeys) { note = 'official API'; kind = 'api'; }
       else { note = 'scrape (add keys for API)'; kind = 'scrape'; hidden = true; } // hidden until keys exist
     }
-    if (id === 'superbuy') { ready = false; note = 'Superbuy search is a JavaScript app — a plain server can’t read it yet'; }
+    if (id === 'superbuy') note = 'searches Taobao via the Superbuy agent';
     if (id === 'cssbuy') { ready = false; note = 'CSSbuy’s new site requires login to search'; }
     if (id === 'amazon') note = 'discounted items only · bot-gated, best-effort';
     if (['aliexpress', 'dhgate', 'alibaba'].includes(id) && env.CHINA_EXTRA !== '1') hidden = true; // re-enable with CHINA_EXTRA=1

@@ -9,7 +9,11 @@ import { normalize, parseMoney } from '../normalize.js';
 export const meta = { id: 'grailed', label: 'Grailed', kind: 'scrape' };
 
 export async function search({ query, limit = 30, env, signal }) {
-  const appId = env.GRAILED_ALGOLIA_APP_ID, apiKey = env.GRAILED_ALGOLIA_API_KEY;
+  // Grailed's public client-side search credentials — the same search-only keys
+  // grailed.com embeds for every visitor (extracted from the live site, verified
+  // working). Env vars override them if Grailed ever rotates the pair.
+  const appId = env.GRAILED_ALGOLIA_APP_ID || 'MNRWEFSS2Q';
+  const apiKey = env.GRAILED_ALGOLIA_API_KEY || 'c89dbaddf15fe70e1941a109bf7c2a3d';
   const index = env.GRAILED_ALGOLIA_INDEX || 'Listing_production';
   if (!appId || !apiKey) throw new Error('Grailed needs GRAILED_ALGOLIA_APP_ID/API_KEY (public keys from grailed.com) to search');
   const url = `https://${appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(index)}/query`;
