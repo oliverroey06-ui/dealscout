@@ -15,6 +15,7 @@ import { parse as parseDhgate } from '../src/connectors/dhgate.js';
 import { parse as parseAlibaba } from '../src/connectors/alibaba.js';
 import { parse as parseSuperbuy } from '../src/connectors/superbuy.js';
 import { parse as parseCssbuy } from '../src/connectors/cssbuy.js';
+import { parse as parseAmazon } from '../src/connectors/amazon.js';
 import { scoreScan, buildBand } from '../src/valuation.js';
 import { normalize, parseMoney, toGBP } from '../src/normalize.js';
 
@@ -208,6 +209,19 @@ test('Superbuy parser maps agent JSON (CNY → GBP)', () => {
   assert.match(items[0].title, /Anime/);
   assert.ok(items[0].url && items[0].url.length > 0, 'has an outbound url');
   assert.equal(items[0].engagement.watchers, 120);
+});
+
+test('Amazon parser keeps only discounted items with % off', () => {
+  const items = parseAmazon(fx('amazon.html'));
+  assert.equal(items.length, 2, 'full-price and junk rows dropped');
+  const first = items[0];
+  assert.equal(first.source, 'amazon');
+  assert.equal(first.price, 23.79);
+  assert.equal(first.wasPrice, 41.99);
+  assert.equal(first.discountPct, 43);
+  assert.match(first.url, /amazon\.co\.uk\/dp\/B0ABCD1234/);
+  assert.equal(first.currency, 'GBP');
+  assert.equal(items[1].discountPct, 50);
 });
 
 test('CSSbuy parser maps agent JSON (CNY → GBP)', () => {

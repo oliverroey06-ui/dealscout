@@ -56,7 +56,7 @@ const cards = await page.$$eval('#grid .deal', els => els.length);
 const top = await page.$eval('#grid .deal', el => ({
   title: el.querySelector('.title').textContent,
   price: el.querySelector('.price').textContent,
-  score: el.querySelector('.dial .n').textContent,
+  pctOff: el.querySelector('.pct').textContent,
   src: el.querySelector('.badge-src').textContent,
   viewHref: el.querySelector('.viewsrc').href
 }));

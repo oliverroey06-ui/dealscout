@@ -45,8 +45,23 @@ const check = (cond, msg) => { if (!cond) { failed++; console.log('  ✗ ' + msg
 
 // /api/sources
 const sources = await (await fetch(`${base}/api/sources`)).json();
-check(sources.sources.length === 15, 'sources endpoint lists all 15 connectors');
+check(sources.sources.length === 16, 'sources endpoint lists all 16 connectors');
 check(sources.sources.filter(s => s.group === 'china').length === 5, 'five sources tagged as the China group');
+check(sources.sources.find(s => s.id === 'amazon').group === 'discounts', 'amazon tagged as the Discounts group');
+check(sources.sources.find(s => s.id === 'aliexpress').hidden === true, 'direct-ship China trio hidden without CHINA_EXTRA');
+
+// home feed responds instantly when amazon isn't enabled (no live fetch in tests)
+const home = await (await fetch(`${base}/api/home`)).json();
+check(home.ok === true && Array.isArray(home.deals) && Array.isArray(home.latest), 'home feed endpoint responds');
+
+// view tracking
+const seedScan = await (await fetch(`${base}/api/scan?q=rtx%20view`)).json();
+const first = seedScan.listings[0];
+await fetch(`${base}/api/view`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ listing: first }) });
+await fetch(`${base}/api/view`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ listing: first }) });
+const home2 = await (await fetch(`${base}/api/home`)).json();
+check(home2.hot.length === 1 && home2.hot[0].views === 2, 'twice-viewed item becomes "hot" on the home feed');
+check(home2.latest.length > 0, 'scans feed the latest-finds pool');
 check(sources.sources.find(s => s.id === 'ebay').ready === true, 'eBay reports ready when keys present');
 check(sources.sources.find(s => s.id === 'facebook').ready === false, 'Facebook reports not-ready by default');
 

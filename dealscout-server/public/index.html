@@ -193,6 +193,38 @@ a{color:inherit}
 @media(max-width:420px){.grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
+<style>
+/* ---- v3: %-off cards, home feed, scanning state, extra filters ---- */
+.pct{font-weight:800;font-size:1.02rem;letter-spacing:-.01em;line-height:1.05}
+.pct.strong{color:#0a7d43}.pct.good{color:#22863a}.pct.fair{color:#8a6d1a}.pct.weak{color:#9aa3ad}
+.pct small{display:block;font-size:.6rem;font-weight:600;color:var(--ink-3,#8a93a0);letter-spacing:.04em;text-transform:uppercase}
+.scanning{display:flex;align-items:center;gap:10px;font-size:.9rem;color:#3a4450;padding:6px 0;flex-wrap:wrap}
+.scanning .spin{width:14px;height:14px;border:2.5px solid #ccd4f2;border-top-color:var(--acc-deep,#3355dd);border-radius:50%;animation:dsspin .7s linear infinite;display:inline-block;flex:none}
+.scanning .scanhint{color:#8a93a0;font-size:.78rem}
+#scansec{font-family:var(--mono,monospace);font-size:.8rem;color:var(--acc-deep,#3355dd);min-width:40px}
+@keyframes dsspin{to{transform:rotate(360deg)}}
+.homeview{display:flex;flex-direction:column;gap:18px;margin-bottom:16px}
+.homeview[hidden]{display:none}
+.hsec .hcap{font-weight:700;font-size:.93rem;margin:0 0 8px;display:flex;align-items:baseline;gap:8px}
+.hsec .hsub{font-weight:400;font-size:.74rem;color:#8a93a0}
+.hrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:10px}
+.mini{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:inherit;background:#fff;border:1px solid #e6e9ef;border-radius:10px;padding:8px;transition:.12s;cursor:pointer}
+.mini:hover{border-color:#aab6f0;box-shadow:0 2px 10px rgba(40,60,160,.08)}
+.mini img{width:100%;height:112px;object-fit:cover;border-radius:7px;background:#f2f4f8}
+.mini .mph{height:112px;display:flex;align-items:center;justify-content:center;background:#f2f4f8;border-radius:7px;color:#aab2bd}
+.mini .mtit{font-size:.76rem;line-height:1.32;max-height:2.65em;overflow:hidden}
+.mini .mrow{display:flex;align-items:center;gap:6px;font-size:.8rem;flex-wrap:wrap}
+.mini .msrc{margin-left:auto;font-size:.64rem;color:#8a93a0}
+.moff{color:#c62828;font-weight:700;font-size:.72rem}
+.mwas{color:#9aa3ad;text-decoration:line-through;font-size:.68rem}
+.mhot{color:#b26a00;font-size:.68rem;font-weight:600}
+.homenote{font-size:.78rem;color:#8a93a0;line-height:1.5}
+.typechips{display:flex;flex-wrap:wrap;gap:5px}
+.typechips button{border:1px solid #d6dbe4;background:#fff;border-radius:14px;padding:3px 9px;font-size:.71rem;cursor:pointer;color:#3a4450;font-family:inherit}
+.typechips button.on{background:var(--acc-deep,#3355dd);border-color:var(--acc-deep,#3355dd);color:#fff}
+#fsizecat{width:100%;margin-bottom:7px;padding:5px;border:1px solid #d6dbe4;border-radius:7px;font:inherit;font-size:.78rem;background:#fff}
+#floc{width:100%;padding:6px 8px;border:1px solid #d6dbe4;border-radius:7px;font:inherit;font-size:.78rem;box-sizing:border-box}
+</style>
 </head>
 <body>
 <svg style="display:none" aria-hidden="true"><symbol id="i-radar" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12l6.5-6.5"/><circle cx="15.5" cy="15" r="1.3" fill="currentColor" stroke="none"/></g></symbol>
@@ -237,12 +269,20 @@ a{color:inherit}
         <div class="frange"><input type="range" id="fscore" min="0" max="90" step="5" value="0"><div class="v"><span>any</span><span id="fscore-v" style="font-weight:600">any</span><span>90</span></div></div>
       </div>
       <div class="fg" id="fsources"><div class="ftitle">Source</div></div>
+      <div class="fg"><div class="ftitle">Type</div><div id="ftype" class="typechips"></div></div>
+      <div class="fg"><div class="ftitle">Size</div>
+        <select id="fsizecat"><option value="">Any category</option><option value="mens">Men's clothing</option><option value="womens">Women's clothing</option><option value="kids">Children's</option><option value="shoes">Shoes (UK / US)</option></select>
+        <div id="fsize" class="typechips"></div></div>
+      <div class="fg"><div class="ftitle">Delivery</div>
+        <input id="floc" type="text" placeholder="Your town / area (e.g. Leeds)" autocomplete="off">
+        <label class="fcheck" style="margin-top:7px"><input type="checkbox" id="fdeliv"> Only items I can get delivered</label></div>
       <div class="fg"><label class="fcheck"><input type="checkbox" id="fimg"> Has photo</label></div>
     </div>
   </aside>
 
   <div class="content">
     <div class="statusbar" id="statusbar"></div>
+    <div class="homeview" id="homeview" hidden></div>
     <div class="grid" id="grid"></div>
     <div class="hero-empty" id="hero">
       <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="52" cy="42" r="26"/><path d="m71 61 22 22"/><path d="M42 42h20M52 32v20" opacity=".4"/></svg>
@@ -274,7 +314,7 @@ const CUR={GBP:'£',EUR:'€',USD:'$',CAD:'C$',AUD:'A$',JPY:'¥'};
 const money=(n,c)=>n==null?'—':(CUR[c]||(c?c+' ':'£'))+Math.round(n).toLocaleString('en-GB');
 const EG=['rtx 3080','fender stratocaster','dyson v11','lego millennium falcon','sony a7 iii','steam deck oled'];
 
-const state={sources:[],selected:new Set(),group:'local',listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null};
+const state={sources:[],selected:new Set(),group:'local',listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null,ftype:new Set(),fsizes:new Map()};
 
 /* ---- sources ---- */
 async function loadSources(){
@@ -284,7 +324,9 @@ async function loadSources(){
     selectGroup(state.group);   // scope selection to the active region filter
   }catch(e){ toast('Could not reach the DealScout server.'); }
 }
-function sourcesInGroup(g){ return state.sources.filter(s=>(s.group||'local')===g); }
+function sourcesInGroup(g){ return state.sources.filter(s=>!s.hidden&&(s.group||'local')===g); }
+const GROUP_LABEL={local:'Local',china:'China',discounts:'Discounts'};
+const GROUP_TITLE={local:'UK resale marketplaces',china:'Buy from China via agents (Superbuy, CSSbuy)',discounts:'Discounted Amazon items — % off shown'};
 function selectGroup(g){
   state.group=g;
   state.selected=new Set(sourcesInGroup(g).filter(s=>s.enabled).map(s=>s.id));
@@ -293,16 +335,16 @@ function selectGroup(g){
 function renderSources(){
   const row=$('#sourcerow');
   row.querySelectorAll('.src,.src-note,.grpwrap').forEach(n=>n.remove());
-  // region toggle: Local | China (only if both groups exist)
-  const groups=[...new Set(state.sources.map(s=>s.group||'local'))];
-  const order=['local','china'].filter(g=>groups.includes(g));
+  // region toggle: Local | China | Discounts (only groups that exist)
+  const groups=[...new Set(state.sources.filter(s=>!s.hidden).map(s=>s.group||'local'))];
+  const order=['local','china','discounts'].filter(g=>groups.includes(g));
   if(order.length>1){
     const wrap=document.createElement('span');wrap.className='grpwrap';
     wrap.style.cssText='display:inline-flex;gap:2px;margin-right:12px;background:var(--acc-wash,#eef1ff);border:1px solid var(--acc,#ccd4f2);border-radius:8px;padding:2px';
     order.forEach(g=>{
       const b=document.createElement('button');const on=state.group===g;
-      b.textContent=g==='china'?'China':'Local';
-      b.title=g==='china'?'Import from China — AliExpress, DHgate, Alibaba, agents (prices approx GBP)':'UK resale marketplaces';
+      b.textContent=GROUP_LABEL[g]||g;
+      b.title=GROUP_TITLE[g]||'';
       b.style.cssText='border:0;cursor:pointer;font:inherit;font-size:.78rem;font-weight:600;border-radius:6px;padding:4px 14px;transition:.12s;'+(on?'background:var(--acc-deep,#3355dd);color:#fff':'background:transparent;color:var(--ink-3,#667)');
       b.addEventListener('click',()=>{ if(state.group!==g)selectGroup(g); });
       wrap.appendChild(b);
@@ -329,6 +371,73 @@ function renderSources(){
   $$('#fsources [data-fsrc]').forEach(cb=>cb.addEventListener('change',applyFilters));
 }
 
+/* ---- type / size / delivery filters ---- */
+const TYPE_ORDER=['shoes','hoodie','jumper','tracksuit','jeans','t-shirt','shorts','skirt','shirt'];
+const TYPE_KEYS={shoes:['trainer','sneaker','shoe','boot','loafer','heel','slider','sandal'],hoodie:['hoodie','hooded'],jumper:['jumper','sweater','sweatshirt','pullover','cardigan','knit'],tracksuit:['tracksuit','joggers','sweatpants','trackpant','track pant'],jeans:['jeans','denim'],'t-shirt':['t-shirt','t shirt','tee'],shorts:['shorts'],skirt:['skirt'],shirt:['shirt']};
+function classify(t){t=(t||'').toLowerCase();for(const k of TYPE_ORDER){if(TYPE_KEYS[k].some(w=>t.includes(w)))return k;}return 'other';}
+const SIZES={mens:['XS','S','M','L','XL','XXL'],womens:['UK 6','UK 8','UK 10','UK 12','UK 14','UK 16'],kids:['2-3y','4-5y','6-7y','8-9y','10-11y','12-13y'],shoes:['3','4','5','6','7','8','9','10','11','12']};
+function sizeLabel(cat,key){
+  if(cat==='shoes')return 'UK '+key+' / US '+(Number(key)+1);
+  if(cat==='womens')return key+' / US '+(Number(key.replace('UK ',''))-4);
+  return key;
+}
+function sizeRegex(cat,key){
+  if(cat==='shoes'){const uk=key,us=String(Number(key)+1);return new RegExp('\\b(uk\\s*'+uk+'(\\.5)?|size\\s*'+uk+'(\\.5)?|us\\s*'+us+')\\b','i');}
+  if(cat==='womens'){const n=key.replace('UK ','');return new RegExp('\\b(uk\\s*|size\\s*)'+n+'\\b','i');}
+  if(cat==='kids'){const m=key.match(/(\d+)-(\d+)/);return new RegExp('\\b'+m[1]+'\\s*-\\s*'+m[2]+'\\b');}
+  return new RegExp('(^|[^A-Za-z])'+key+'([^A-Za-z]|$)','i');   // men's letter sizes
+}
+// Sources that ship to you (vs local-pickup marketplaces like Gumtree/Shpock/FB).
+const SHIP_SOURCES=new Set(['vinted','depop','stockx','grailed','vestiaire','preloved','amazon','ebay','aliexpress','dhgate','alibaba','superbuy','cssbuy']);
+function renderTypeChips(){
+  const host=$('#ftype');host.innerHTML='';
+  [...TYPE_ORDER,'other'].forEach(k=>{
+    const b=document.createElement('button');b.textContent=k==='t-shirt'?'T-shirt':k[0].toUpperCase()+k.slice(1);
+    if(state.ftype.has(k))b.classList.add('on');
+    b.addEventListener('click',()=>{state.ftype.has(k)?state.ftype.delete(k):state.ftype.add(k);renderTypeChips();applyFilters();});
+    host.appendChild(b);
+  });
+}
+function renderSizeChips(){
+  const cat=$('#fsizecat').value,host=$('#fsize');host.innerHTML='';
+  if(!cat)return;
+  SIZES[cat].forEach(key=>{
+    const id=cat+'|'+key;
+    const b=document.createElement('button');b.textContent=sizeLabel(cat,key);
+    if(state.fsizes.has(id))b.classList.add('on');
+    b.addEventListener('click',()=>{state.fsizes.has(id)?state.fsizes.delete(id):state.fsizes.set(id,sizeRegex(cat,key));renderSizeChips();applyFilters();});
+    host.appendChild(b);
+  });
+}
+// Sizes are matched from listing titles (sources rarely expose structured
+// size data) — a best-effort filter, not a guarantee.
+
+/* ---- view tracking (feeds the home page's "hot" section) ---- */
+function trackView(l){try{fetch('/api/view',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({listing:{id:l.id,source:l.source,title:l.title,url:l.url,image:l.image,price:l.price,currency:l.currency}})}).catch(()=>{});}catch(e){}}
+
+/* ---- home view: Amazon discounts + hot + latest ---- */
+function miniCard(l,extra){
+  return '<a class="mini" href="'+esc(l.url)+'" target="_blank" rel="noopener" data-mid="'+esc(l.id)+'">'+
+    (l.image?'<img src="'+esc(l.image)+'" alt="" loading="lazy" onerror="this.remove()">':'<span class="mph"><svg viewBox="0 0 24 24" width="26" height="26"><use href="#i-box"/></svg></span>')+
+    '<span class="mtit">'+esc(l.title)+'</span>'+
+    '<span class="mrow"><b>'+money(l.price,l.currency)+'</b>'+(extra||'')+'<span class="msrc">'+esc(srcLabel(l.source)||l.source)+'</span></span></a>';
+}
+async function loadHome(){
+  try{
+    const j=await (await fetch('/api/home')).json();
+    const hv=$('#homeview');if(!hv||state.listings.length)return;
+    const sec=(cap,sub,items,ex)=>items&&items.length?'<div class="hsec"><div class="hcap">'+cap+' <span class="hsub">'+sub+'</span></div><div class="hrow">'+items.map(l=>miniCard(l,ex?ex(l):'')).join('')+'</div></div>':'';
+    let html='';
+    html+=sec('Biggest Amazon discounts','live · refreshed every 15 min',j.deals,l=>'<span class="moff">-'+(l.discountPct||0)+'%</span>'+(l.wasPrice?'<span class="mwas">'+money(l.wasPrice,l.currency)+'</span>':''));
+    if(!(j.deals&&j.deals.length))html+='<div class="hsec"><div class="hcap">Biggest Amazon discounts</div><div class="homenote">Amazon is bot-gating this server right now — this section fills itself in when a sweep gets through. Your scans below work regardless.</div></div>';
+    html+=sec('Hot right now','most viewed on DealScout',j.hot,l=>'<span class="mhot">'+l.views+' views</span>');
+    html+=sec('Latest finds','from recent scans across all users',j.latest,l=>l.valuation&&l.valuation.gapPct>2?'<span class="moff">'+l.valuation.gapPct+'% under</span>':'');
+    hv.innerHTML=html;hv.hidden=!html;
+    const all=[...(j.deals||[]),...(j.hot||[]),...(j.latest||[])];
+    $$('#homeview .mini').forEach(a=>a.addEventListener('click',()=>{const l=all.find(x=>x.id===a.dataset.mid);if(l)trackView(l);}));
+  }catch(e){}
+}
+
 /* ---- scanning ---- */
 async function scan(){
   const q=$('#q').value.trim();
@@ -338,14 +447,18 @@ async function scan(){
   state.scanning=true;
   const btn=$('#scan');btn.disabled=true;btn.querySelector('span').textContent='Scanning';
   btn.querySelector('svg').outerHTML='<span class="spin"></span>';
-  $('#hero').hidden=true;$('#empty').hidden=true;
+  $('#hero').hidden=true;$('#empty').hidden=true;$('#homeview').hidden=true;
   showSkeletons();
+  // Visible scanning state — so a slow scan never looks like a dead site.
+  const scanT0=Date.now(),srcN=state.selected.size;
+  $('#statusbar').innerHTML='<div class="scanning"><span class="spin"></span><b>Scanning '+srcN+' marketplace'+(srcN===1?'':'s')+'…</b><span id="scansec">0.0s</span><span class="scanhint">searching live listings — usually a few seconds</span></div>';
+  const scanTick=setInterval(()=>{const el=$('#scansec');if(el)el.textContent=((Date.now()-scanT0)/1000).toFixed(1)+'s';},100);
   const url='/api/scan?q='+encodeURIComponent(q)+'&sources='+[...state.selected].join(',');
   try{
     const r=await fetch(url);const j=await r.json();
     if(!j.ok){
       if(r.status===401){location.href='/login';return;}
-      if(r.status===402){$('#grid').innerHTML='';$('#empty').hidden=false;$('#empty-msg').innerHTML=esc(j.error||'You’ve hit a plan limit.')+' <a href="/account" style="color:var(--acc-deep);font-weight:600">Upgrade →</a>';return;}
+      if(r.status===402){$('#statusbar').innerHTML='';$('#grid').innerHTML='';$('#empty').hidden=false;$('#empty-msg').innerHTML=esc(j.error||'You’ve hit a plan limit.')+' <a href="/account" style="color:var(--acc-deep);font-weight:600">Upgrade →</a>';return;}
       throw new Error(j.error||'scan failed');
     }
     if(j.scansToday!=null&&j.scansPerDay!=null){const left=Math.max(0,j.scansPerDay-j.scansToday);const m=document.getElementById('scanmeter');if(m)m.textContent=left+' of '+j.scansPerDay+' free scans left today';}
@@ -354,9 +467,10 @@ async function scan(){
     if(!j.listings.length){$('#grid').innerHTML='';$('#empty').hidden=false;
       $('#empty-msg').textContent=j.sources.every(s=>s.ok)?'Every source responded but returned nothing for “'+q+'”. Try a broader term.':'Some sources errored (see status above). '+ (j.sources.find(s=>!s.ok)?.error||'');}
   }catch(e){
-    $('#grid').innerHTML='';$('#empty').hidden=false;
+    $('#statusbar').innerHTML='';$('#grid').innerHTML='';$('#empty').hidden=false;
     $('#empty-msg').textContent='Scan failed: '+e.message;
   }finally{
+    clearInterval(scanTick);
     state.scanning=false;btn.disabled=false;
     btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-radar"/></svg><span>Scan</span>';
   }
@@ -408,6 +522,14 @@ function applyFilters(){
     if(l.valuation.score<minS)return false;
     if(needImg&&!l.image)return false;
     if(srcOn.size&&!srcOn.has(l.source))return false;
+    if(state.ftype.size&&!state.ftype.has(classify(l.title)))return false;
+    if(state.fsizes.size&&![...state.fsizes.values()].some(rx=>rx.test((l.title||'')+' '+(l.rawTitle||''))))return false;
+    if($('#fdeliv').checked){
+      const locv=($('#floc').value||'').trim().toLowerCase();
+      const ships=SHIP_SOURCES.has(l.source)||l.shipping!=null;
+      const near=locv&&(l.location||'').toLowerCase().includes(locv);
+      if(!(ships||near))return false;
+    }
     return true;
   });
   const by={score:(a,b)=>b.valuation.score-a.valuation.score,gap:(a,b)=>(b.valuation.gapPct??-999)-(a.valuation.gapPct??-999),plow:(a,b)=>a.price-b.price,phigh:(a,b)=>b.price-a.price};
@@ -420,6 +542,16 @@ function dial(score,big){
   return '<div class="dial '+g+(big?' big':'')+'" role="img" aria-label="Score '+score+'"><svg width="'+box+'" height="'+box+'" viewBox="0 0 '+box+' '+box+'"><circle class="bg" cx="'+box/2+'" cy="'+box/2+'" r="'+r+'" fill="none" stroke-width="'+(big?7:4.5)+'"/><circle class="fg" cx="'+box/2+'" cy="'+box/2+'" r="'+r+'" fill="none" stroke-width="'+(big?7:4.5)+'" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/></svg><span class="n">'+score+'</span></div>';
 }
 const gradeCls=s=>s>=82?'strong':s>=68?'good':s>=54?'fair':'weak';
+// The card's headline metric: % off the average selling price (the band mid),
+// replacing the old /100 dial per product feedback.
+function pctOff(l){
+  const g=l.valuation?l.valuation.gapPct:null;
+  if(g==null)return '<div class="pct weak">—<small>no comps</small></div>';
+  if(g>=70)return '<div class="pct fair">'+g+'% off<small>verify item</small></div>';
+  if(g>=3)return '<div class="pct '+(g>=25?'strong':'good')+'">'+g+'% off<small>avg selling price</small></div>';
+  if(g>=-3)return '<div class="pct weak">at avg<small>selling price</small></div>';
+  return '<div class="pct weak">'+Math.abs(g)+'% over<small>avg selling price</small></div>';
+}
 function gapTag(l){const g=l.valuation.gapPct;if(g==null)return '<span class="gap b">no comps</span>';
   if(g>=70)return '<span class="gap warn" title="Far below the going price — likely a different item, spares/repair, or too good to be true. Check the listing.">verify item</span>';
   if(g>=12)return '<span class="gap g">'+g+'% under</span>';
@@ -451,9 +583,9 @@ function card(l){
     '<button class="watch'+(w?' on':'')+'" data-w="'+esc(l.id)+'" aria-label="Watch" aria-pressed="'+w+'"><svg width="16" height="16" viewBox="0 0 24 24"><use href="#i-mark"/></svg></button></div>'+
     '<div class="body"><h3 class="title">'+esc(l.title)+'</h3>'+
     '<div class="meta">'+(l.condition?'<span>'+esc(l.condition)+'</span>':'')+(l.location?'<span>'+esc(l.location)+'</span>':'')+'</div>'+
-    '<div class="nums"><span class="price">'+money(l.price,l.currency)+'</span>'+
-    '<span class="est">'+estText(l)+'</span>'+gapTag(l)+'</div>'+
-    '<div class="foot">'+dial(l.valuation.score,false)+'<a class="viewsrc" href="'+esc(l.url)+'" target="_blank" rel="noopener" data-ext>view on '+esc(srcLabel(l.source))+' ↗</a></div></div></article>';
+    '<div class="nums"><span class="price">'+money(l.price,l.currency)+(l.wasPrice?' <span class="mwas">'+money(l.wasPrice,l.currency)+'</span>':'')+'</span>'+
+    '<span class="est">'+estText(l)+'</span></div>'+
+    '<div class="foot">'+(l.discountPct?'<div class="pct strong">'+l.discountPct+'% off<small>vs Amazon was-price</small></div>':pctOff(l))+'<a class="viewsrc" href="'+esc(l.url)+'" target="_blank" rel="noopener" data-ext>view on '+esc(srcLabel(l.source))+' ↗</a></div></div></article>';
 }
 function endStr(m){if(m<=0)return 'ended';if(m<60)return m+'m left';return Math.floor(m/60)+'h '+(m%60)+'m';}
 function renderGrid(){
@@ -478,6 +610,7 @@ const shortName=l=>l.title.split(',')[0].slice(0,40);
 let lastFocus=null;
 function openDrawer(id){
   const l=state.listings.find(x=>x.id===id);if(!l)return;lastFocus=document.activeElement;
+  trackView(l);
   const v=l.valuation,band=v.band;
   const comps=state.listings.filter(x=>x.id!==l.id).sort((a,b)=>a.price-b.price).slice(0,5);
   let bandHtml='';
@@ -494,7 +627,7 @@ function openDrawer(id){
     '<div class="dart">'+(l.image?'<img src="'+esc(l.image)+'" alt="" onerror="this.remove()">':'<svg class="ph" style="width:70px;height:70px;color:var(--ink-3)" viewBox="0 0 24 24"><use href="#i-box"/></svg>')+'</div>'+
     '<h3 class="dtitle">'+esc(l.title)+'</h3>'+
     '<div class="dmeta"><span class="tag">'+esc(srcLabel(l.source))+'</span>'+(l.condition?'<span class="tag">'+esc(l.condition)+'</span>':'')+(l.location?'<span class="tag">'+esc(l.location)+'</span>':'')+(l.seller.name?'<span class="tag">'+esc(l.seller.name)+(l.seller.ratingPct!=null?' · '+l.seller.ratingPct+'%':'')+'</span>':'')+(l.engagement.favourites!=null?'<span class="tag">'+l.engagement.favourites+' saved</span>':'')+'</div>'+
-    '<div class="dblock"><div class="dnums">'+dial(v.score,true)+'<div><div class="dprice">'+money(l.price,l.currency)+'</div><div class="dsub">'+v.grade.label+(v.gapPct!=null?' · '+v.gapPct+'% vs live band':'')+'</div></div></div>'+bandHtml+'</div>'+
+    '<div class="dblock"><div class="dnums">'+dial(v.score,true)+'<div><div class="dprice">'+money(l.price,l.currency)+'</div><div class="dsub">'+v.grade.label+(v.gapPct!=null?' · '+(v.gapPct>=0?v.gapPct+'% off the average selling price':Math.abs(v.gapPct)+'% over the average selling price'):'')+'</div></div></div>'+bandHtml+'</div>'+
     '<div class="dblock"><div class="cap2">Why '+v.score+' · weighted signals</div>'+
     v.parts.map(p=>'<div class="brk"><span class="nm">'+esc(p.label)+(p.measured?'':'<span class="est-tag">estimated</span>')+'<span class="w">weight '+Math.round(p.weight*100)+'%</span></span><span class="trk"><span class="fil" style="width:'+Math.round(p.n*100)+'%"></span></span><span class="vv">'+p.points.toFixed(1)+'</span></div>').join('')+
     '<div class="brk-note">Score = price gap vs the live band (biggest weight) + seller quality + how complete the listing is + demand signal where the source exposes it. Signals marked <b>estimated</b> are neutral because '+esc(srcLabel(l.source))+' does not publish them.</div></div>'+
@@ -515,7 +648,11 @@ $('#q').addEventListener('keydown',e=>{if(e.key==='Enter')scan();});
 $('#fprice').addEventListener('input',e=>{$('#fprice-v').textContent=e.target.value>=2000?'no cap':money(+e.target.value);applyFilters();});
 $('#fscore').addEventListener('input',e=>{$('#fscore-v').textContent=e.target.value>0?e.target.value:'any';applyFilters();});
 $('#fimg').addEventListener('change',applyFilters);
-$('#freset').addEventListener('click',()=>{$('#fprice').value=2000;$('#fprice-v').textContent='no cap';$('#fscore').value=0;$('#fscore-v').textContent='any';$('#fimg').checked=false;$$('#fsources [data-fsrc]').forEach(c=>c.checked=true);applyFilters();});
+$('#freset').addEventListener('click',()=>{$('#fprice').value=2000;$('#fprice-v').textContent='no cap';$('#fscore').value=0;$('#fscore-v').textContent='any';$('#fimg').checked=false;$$('#fsources [data-fsrc]').forEach(c=>c.checked=true);state.ftype.clear();state.fsizes.clear();$('#fsizecat').value='';$('#floc').value='';$('#fdeliv').checked=false;renderTypeChips();renderSizeChips();applyFilters();});
+$('#fsizecat').addEventListener('change',()=>{state.fsizes.clear();renderSizeChips();applyFilters();});
+$('#floc').addEventListener('input',applyFilters);
+$('#fdeliv').addEventListener('change',applyFilters);
+renderTypeChips();
 $('#watch-count').addEventListener('click',e=>{e.preventDefault();openWatchlist();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 $('#egchips').innerHTML=EG.map(q=>'<button class="chip-eg">'+q+'</button>').join('');
@@ -525,12 +662,15 @@ function openWatchlist(){
   if(!state.watch.size){toast('Watchlist is empty. Tap the bookmark on any deal.');return;}
   state.listings=[...state.watch.values()];
   state.lastMeta={count:state.watch.size,ms:0,sources:[]};
-  $('#hero').hidden=true;$('#empty').hidden=true;
+  $('#hero').hidden=true;$('#empty').hidden=true;$('#homeview').hidden=true;
   $('#statusbar').innerHTML='<span class="result-read"><b>'+state.watch.size+'</b> watched listings</span>';
   applyFilters();
 }
 
 loadSources();
+loadHome();
+// Brand = home: clears any scan and shows the home feed again.
+(function(){const b=document.querySelector('.brand');if(b){b.style.cursor='pointer';b.addEventListener('click',()=>{location.href=location.pathname;});}})();
 
 // ---- accounts / plan chip / ads (SaaS mode only) ----
 (async function initAccount(){

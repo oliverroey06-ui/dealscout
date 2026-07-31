@@ -11,12 +11,16 @@
 //   • region: "local" (UK resale) vs "china" (import) — the two UI filters.
 // core sources are all local. Premium = the extra resale connectors + every
 // China source (importing is an Elite feature). Facebook stays a local-only case.
-export const CORE_SOURCES = ['ebay', 'vinted', 'gumtree', 'shpock'];
+export const CORE_SOURCES = ['ebay', 'vinted', 'gumtree', 'shpock', 'amazon'];
 export const CHINA_SOURCES = ['aliexpress', 'dhgate', 'alibaba', 'superbuy', 'cssbuy'];
 export const PREMIUM_SOURCES = ['stockx', 'depop', 'grailed', 'vestiaire', 'preloved', ...CHINA_SOURCES];
 
 // Which region-filter a source belongs to.
-export function sourceGroup(id) { return CHINA_SOURCES.includes(id) ? 'china' : 'local'; }
+export function sourceGroup(id) {
+  if (CHINA_SOURCES.includes(id)) return 'china';
+  if (id === 'amazon') return 'discounts';
+  return 'local';
+}
 
 export const PLANS = {
   free: {

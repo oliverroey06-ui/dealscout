@@ -17,10 +17,11 @@ import * as dhgate from './dhgate.js';
 import * as alibaba from './alibaba.js';
 import * as superbuy from './superbuy.js';
 import * as cssbuy from './cssbuy.js';
+import * as amazon from './amazon.js';
 
 export const CONNECTORS = {
   ebay, vinted, gumtree, shpock, facebook, depop, stockx, grailed, vestiaire, preloved,
-  aliexpress, dhgate, alibaba, superbuy, cssbuy,
+  aliexpress, dhgate, alibaba, superbuy, cssbuy, amazon,
 };
 
 // Which sources are switched on, from env. Default: core scrapers + the resale
@@ -28,24 +29,33 @@ export const CONNECTORS = {
 export function enabledSources(env) {
   const explicit = (env.SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   if (explicit.length) return explicit.filter(s => CONNECTORS[s]);
-  const on = ['ebay', 'vinted', 'gumtree', 'shpock', 'depop', 'stockx', 'grailed', 'vestiaire', 'preloved',
-    'aliexpress', 'dhgate', 'alibaba', 'superbuy', 'cssbuy'];
+  // Product default: Local resale (no eBay until API keys exist, no Facebook),
+  // China = the two buying agents, Discounts = Amazon.
+  const on = ['vinted', 'gumtree', 'shpock', 'depop', 'stockx', 'grailed', 'vestiaire', 'preloved',
+    'superbuy', 'cssbuy', 'amazon'];
+  if (env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET) on.unshift('ebay');  // returns with free API keys
+  if (env.CHINA_EXTRA === '1') on.push('aliexpress', 'dhgate', 'alibaba'); // the direct-ship China trio
   if (env.FACEBOOK_ENABLED === '1') on.push('facebook');
   return on;
 }
 
 export function sourceStatus(env) {
+  const on = enabledSources(env);
+  const hasEbayKeys = !!(env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET);
   return Object.entries(CONNECTORS).map(([id, c]) => {
-    let ready = true, note = '', kind = c.meta.kind;
+    let ready = true, note = '', kind = c.meta.kind, hidden = false;
     const group = c.meta.group || 'local';
     if (id === 'ebay') {
-      // eBay is always usable now: official API when keys are set, scrape otherwise.
-      if (env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET) { note = 'official API'; kind = 'api'; }
-      else { note = 'scrape (add keys for API)'; kind = 'scrape'; }
+      if (hasEbayKeys) { note = 'official API'; kind = 'api'; }
+      else { note = 'scrape (add keys for API)'; kind = 'scrape'; hidden = true; } // hidden until keys exist
     }
-    if (group === 'china') note = note || 'ships from China · approx GBP';
-    if (id === 'facebook' && env.FACEBOOK_ENABLED !== '1') { ready = false; note = 'needs a logged-in browser (local only)'; }
-    return { id, label: c.meta.label, kind, group, ready, note, enabled: enabledSources(env).includes(id) };
+    if (id === 'superbuy') { ready = false; note = 'Superbuy search is a JavaScript app — a plain server can’t read it yet'; }
+    if (id === 'cssbuy') { ready = false; note = 'CSSbuy’s new site requires login to search'; }
+    if (id === 'amazon') note = 'discounted items only · bot-gated, best-effort';
+    if (['aliexpress', 'dhgate', 'alibaba'].includes(id) && env.CHINA_EXTRA !== '1') hidden = true; // re-enable with CHINA_EXTRA=1
+    if (group === 'china' && !note) note = 'ships from China · approx GBP';
+    if (id === 'facebook' && env.FACEBOOK_ENABLED !== '1') { ready = false; hidden = true; note = 'needs a logged-in browser (local only)'; }
+    return { id, label: c.meta.label, kind, group, ready, hidden, note, enabled: on.includes(id) };
   });
 }
 

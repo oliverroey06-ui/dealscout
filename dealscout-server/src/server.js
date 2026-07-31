@@ -30,6 +30,11 @@ const origin = (req) => `${req.protocol}://${req.get('host')}`;
 export async function buildApp() {
   const store = await createStore(env);
   const cache = new TTLCache(Number(env.CACHE_TTL_MS || 90_000));
+  // Home-page feeds (in-memory; per-instance): a rolling pool of the freshest
+  // finds from real scans, and view counts that make items "hot".
+  const latestPool = [];
+  const hotViews = new Map();
+  const homeDeals = { ts: 0, items: [], error: null };
   const app = express();
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
@@ -225,6 +230,11 @@ export async function buildApp() {
         band: scored[0]?.valuation.band || null, count: scored.length, listings: scored,
       };
       cache.set(cacheKey, payload);
+      // Feed the home page's "latest finds" with this scan's best results.
+      for (const l of scored.slice(0, 10)) {
+        if (!latestPool.some(x => x.id === l.id)) latestPool.unshift({ ...l, seenAt: Date.now() });
+      }
+      if (latestPool.length > 200) latestPool.length = 200;
     }
     if (AUTH_ENABLED && plan.scoresPerDay !== Infinity) {
       const n = await store.usage.bump(user.id, day);
@@ -233,6 +243,41 @@ export async function buildApp() {
     if (blockedPremium.length) payload.blockedPremium = blockedPremium;
     payload.plan = plan.id; payload.ads = AUTH_ENABLED ? plan.ads : false;
     res.json(payload);
+  });
+
+  // ---------------- home feed (latest / hot / Amazon discounts) ----------------
+  app.post('/api/view', (req, res) => {
+    const l = req.body?.listing;
+    if (!l?.id) return res.status(400).json({ ok: false });
+    const e = hotViews.get(l.id) || { count: 0, listing: null };
+    e.count++; e.ts = Date.now();
+    e.listing = { id: l.id, source: l.source, title: l.title, url: l.url, image: l.image, price: l.price, currency: l.currency };
+    hotViews.set(l.id, e);
+    if (hotViews.size > 500) {                       // prune the coldest
+      [...hotViews.entries()].sort((a, b) => a[1].count - b[1].count).slice(0, 50).forEach(([k]) => hotViews.delete(k));
+    }
+    res.json({ ok: true });
+  });
+
+  app.get('/api/home', async (req, res) => {
+    // Amazon "biggest discounts" sweep, cached 15 min. Only attempted when the
+    // amazon source is enabled (never in offline tests), and failures are
+    // reported honestly instead of pretending.
+    if (Date.now() - homeDeals.ts > 15 * 60_000 && enabledSources(env).includes('amazon')) {
+      homeDeals.ts = Date.now(); homeDeals.error = null;
+      for (const q of ['trainers', 'hoodie']) {      // bounded: at most two attempts
+        const r = await runSource('amazon', { query: q, limit: 24, env });
+        if (r.ok && r.listings.length) {
+          const fresh = r.listings.filter(l => l.discountPct).sort((a, b) => b.discountPct - a.discountPct).slice(0, 12);
+          homeDeals.items = fresh.length ? fresh : homeDeals.items;
+          break;
+        }
+        homeDeals.error = r.error || 'no discounted items returned';
+      }
+    }
+    const hot = [...hotViews.values()].filter(e => e.count >= 2)
+      .sort((a, b) => b.count - a.count).slice(0, 8).map(e => ({ ...e.listing, views: e.count }));
+    res.json({ ok: true, deals: homeDeals.items, dealsError: homeDeals.error, latest: latestPool.slice(0, 12), hot });
   });
 
   // ---------------- pages ----------------
