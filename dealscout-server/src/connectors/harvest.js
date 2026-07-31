@@ -13,7 +13,7 @@ import * as cheerio from 'cheerio';
 
 const PRICE_RE = /(£|US\s?\$|\$|€)\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)/;
 
-export function harvest(html, { linkPatterns, minTitle = 10, maxCardText = 1500, limit = 60 } = {}) {
+export function harvest(html, { linkPatterns, minTitle = 10, maxCardText = 1500, limit = 100 } = {}) {
   const $ = cheerio.load(html);
   const patterns = Array.isArray(linkPatterns) ? linkPatterns : [linkPatterns];
   const selector = patterns.map(p => `a[href*="${p}"]`).join(',');

@@ -314,7 +314,7 @@ const CUR={GBP:'£',EUR:'€',USD:'$',CAD:'C$',AUD:'A$',JPY:'¥'};
 const money=(n,c)=>n==null?'—':(CUR[c]||(c?c+' ':'£'))+Math.round(n).toLocaleString('en-GB');
 const EG=['rtx 3080','fender stratocaster','dyson v11','lego millennium falcon','sony a7 iii','steam deck oled'];
 
-const state={sources:[],selected:new Set(),group:'local',listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null,ftype:new Set(),fsizes:new Map()};
+const state={sources:[],selected:new Set(),group:'local',listings:[],filtered:[],watch:new Map(),sort:'score',scanning:false,lastMeta:null,ftype:new Set(),fsizes:new Map(),persite:50};
 
 /* ---- sources ---- */
 async function loadSources(){
@@ -453,7 +453,7 @@ async function scan(){
   const scanT0=Date.now(),srcN=state.selected.size;
   $('#statusbar').innerHTML='<div class="scanning"><span class="spin"></span><b>Scanning '+srcN+' marketplace'+(srcN===1?'':'s')+'…</b><span id="scansec">0.0s</span><span class="scanhint">searching live listings — usually a few seconds</span></div>';
   const scanTick=setInterval(()=>{const el=$('#scansec');if(el)el.textContent=((Date.now()-scanT0)/1000).toFixed(1)+'s';},100);
-  const url='/api/scan?q='+encodeURIComponent(q)+'&sources='+[...state.selected].join(',');
+  const url='/api/scan?q='+encodeURIComponent(q)+'&sources='+[...state.selected].join(',')+'&limit='+(state.persite||50);
   try{
     const r=await fetch(url);const j=await r.json();
     if(!j.ok){
@@ -508,9 +508,12 @@ function renderStatus(j){
     note='<div class="status-note" style="flex-basis:100%;margin-top:7px;font-size:12.5px;color:#64707d;line-height:1.55;max-width:70ch">'+bits.join(' ')+'</div>';
   }
   sb.innerHTML='<span class="result-read"><b>'+j.count+'</b> listings · '+j.ms+'ms</span>'+bandChip+pills+
-    '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>'+note;
+    '<select class="sortsel" id="sort"><option value="score">Best deal score</option><option value="gap">Biggest discount</option><option value="plow">Price low→high</option><option value="phigh">Price high→low</option></select>'+
+    '<select class="sortsel" id="persite" title="How many results to fetch from each site"><option value="30">30 / site</option><option value="50">50 / site</option><option value="100">100 / site</option></select>'+note;
   $('#sort').value=state.sort;
   $('#sort').addEventListener('change',e=>{state.sort=e.target.value;applyFilters();});
+  $('#persite').value=String(state.persite||50);
+  $('#persite').addEventListener('change',e=>{state.persite=+e.target.value;toast('Fetching up to '+state.persite+' per site from the next scan');});
 }
 
 /* ---- filters + render ---- */

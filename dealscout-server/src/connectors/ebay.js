@@ -53,7 +53,7 @@ async function searchApi({ query, limit = 30, env, signal }) {
   const token = await getToken(env);
   const marketplace = env.EBAY_MARKETPLACE || 'EBAY_GB';
   const searchBase = env.EBAY_SEARCH_URL || DEFAULT_SEARCH;
-  const url = `${searchBase}?q=${encodeURIComponent(query)}&limit=${Math.min(50, limit)}&sort=newlyListed`;
+  const url = `${searchBase}?q=${encodeURIComponent(query)}&limit=${Math.min(100, limit)}&sort=newlyListed`;
   const res = await fetch(url, {
     signal,
     headers: {
@@ -104,7 +104,7 @@ export function _mapItemsForTest(json) {
 // --- no-key HTML scrape path ---
 async function searchScrape({ query, limit = 30, env, signal }) {
   const base = env.EBAY_WEB_BASE || 'https://www.ebay.co.uk';
-  const url = `${base}/sch/i.html?_nkw=${encodeURIComponent(query)}&_sop=10&_ipg=60`;
+  const url = `${base}/sch/i.html?_nkw=${encodeURIComponent(query)}&_sop=10&_ipg=120`;
   const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'text/html' } }, env);
   if (!res.ok) throw new Error(`eBay search page returned ${res.status} (no API keys set — using scrape fallback)`);
   const html = await res.text();

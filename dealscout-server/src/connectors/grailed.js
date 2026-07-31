@@ -20,7 +20,7 @@ export async function search({ query, limit = 30, env, signal }) {
   const res = await fetch(url, {
     method: 'POST', signal,
     headers: { 'X-Algolia-Application-Id': appId, 'X-Algolia-API-Key': apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, hitsPerPage: Math.min(40, limit) }),
+    body: JSON.stringify({ query, hitsPerPage: Math.min(100, limit) }),
   });
   if (!res.ok) throw new Error(`Grailed/Algolia returned ${res.status}`);
   return parse(await res.json()).slice(0, limit);

@@ -13,7 +13,7 @@ export const meta = { id: 'superbuy', label: 'Superbuy', kind: 'scrape', group: 
 
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.SUPERBUY_BASE || 'https://front.superbuy.com';
-  const size = String(Math.min(40, limit));
+  const size = String(Math.min(60, limit));
   const body = new URLSearchParams({
     keyword: query, platform: 'taobao', pageNo: '1', toPage: '1',
     pageSize: size, perPageSize: size, currency: 'USD', translate: '1',
@@ -21,15 +21,26 @@ export async function search({ query, limit = 30, env, signal }) {
   const res = await scrapeFetch(`${base}/crawler/search-product`, {
     method: 'POST', signal,
     headers: {
-      'User-Agent': UA, 'Accept': 'application/json',
+      'User-Agent': UA,
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'en-GB,en;q=0.9',
       'Content-Type': 'application/x-www-form-urlencoded',
+      'Origin': 'https://www.superbuy.com',
       'Referer': 'https://www.superbuy.com/',
     },
     body,
   }, env);
-  if (!res.ok) throw new Error(`Superbuy returned ${res.status}`);
+  if (!res.ok) {
+    // Surface what Superbuy actually said, so a failing pill is diagnosable.
+    const t = await res.text().catch(() => '');
+    throw new Error(`Superbuy returned ${res.status}${t ? ' · ' + t.replace(/\s+/g, ' ').slice(0, 90) : ''}`);
+  }
   let j; try { j = await res.json(); } catch { throw new Error('Superbuy: non-JSON response (endpoint changed or challenged)'); }
-  return parse(j, env).slice(0, limit);
+  const out = parse(j, env);
+  if (!out.length && j && j.state !== undefined && j.state !== 0) {
+    throw new Error(`Superbuy API refused (state ${j.state}${j.msg ? ': ' + String(j.msg).slice(0, 80) : ''})`);
+  }
+  return out.slice(0, limit);
 }
 
 export function parse(json, env = null) {

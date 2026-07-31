@@ -10,7 +10,7 @@ export const meta = { id: 'depop', label: 'Depop', kind: 'scrape' };
 
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.DEPOP_API || 'https://webapi.depop.com';
-  const url = `${base}/api/v3/search/products/?what=${encodeURIComponent(query)}&itemsPerPage=${Math.min(40, limit)}`;
+  const url = `${base}/api/v3/search/products/?what=${encodeURIComponent(query)}&itemsPerPage=${Math.min(90, limit)}`;
   const res = await scrapeFetch(url, { signal, headers: { 'User-Agent': UA, 'Accept': 'application/json' } }, env);
   if (!res.ok) throw new Error(`Depop API returned ${res.status}`);
   return parse(await res.json()).slice(0, limit);

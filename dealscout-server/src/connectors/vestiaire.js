@@ -13,7 +13,7 @@ export async function search({ query, limit = 30, env, signal }) {
   const res = await scrapeFetch(url, {
     method: 'POST', signal,
     headers: { 'User-Agent': UA, 'Accept': 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pagination: { offset: 0, limit: Math.min(40, limit) }, fields: [], q: query, filters: {} }),
+    body: JSON.stringify({ pagination: { offset: 0, limit: Math.min(96, limit) }, fields: [], q: query, filters: {} }),
   }, env);
   if (!res.ok) throw new Error(`Vestiaire returned ${res.status} (undocumented API — may need a residential IP)`);
   return parse(await res.json()).slice(0, limit);

@@ -209,7 +209,7 @@ export async function buildApp() {
       }
     }
 
-    const limit = Math.min(50, Math.max(5, Number(req.query.limit) || 30));
+    const limit = Math.min(100, Math.max(5, Number(req.query.limit) || 50));
     const allEnabled = enabledSources(env);
     const permitted = AUTH_ENABLED ? allowedSources(plan.id, allEnabled) : allEnabled;
     const requested = String(req.query.sources || '').split(',').map(s => s.trim()).filter(Boolean);

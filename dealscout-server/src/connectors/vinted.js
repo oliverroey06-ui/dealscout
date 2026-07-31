@@ -31,7 +31,7 @@ async function getCookie(base, signal, env) {
 export async function search({ query, limit = 30, env, signal }) {
   const base = env.VINTED_BASE || 'https://www.vinted.co.uk';
   const cookie = await getCookie(base, signal, env);
-  const url = `${base}/api/v2/catalog/items?search_text=${encodeURIComponent(query)}&per_page=${Math.min(40, limit)}&order=newest_first`;
+  const url = `${base}/api/v2/catalog/items?search_text=${encodeURIComponent(query)}&per_page=${Math.min(96, limit)}&order=newest_first`;
   const res = await scrapeFetch(url, {
     signal,
     headers: {
