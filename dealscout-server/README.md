@@ -195,18 +195,20 @@ cookies. `.env.example` lists every variable.
 
 ## Sources & status
 
-| Source          | Method                     | Tier    | Reliability |
-|-----------------|----------------------------|---------|-------------|
-| eBay            | Official API (keys) / scrape | core  | ★★★★★ with keys · scrape blocked from cloud IPs |
-| Vinted          | Internal JSON endpoint     | core    | ★★★ works until they rotate anti-bot |
-| Gumtree         | Server-HTML scrape         | core    | ★★★ selector-dependent |
-| Shpock          | Embedded JSON / HTML       | core    | ★★ most likely to need updates |
-| Depop           | Internal search JSON       | premium | ★★★ best-effort |
-| StockX          | Browse JSON                | premium | ★ heavily bot-protected (needs residential IP / official API) |
-| Grailed         | Algolia (public keys)      | premium | ★★ needs GRAILED_ALGOLIA_* keys |
-| Vestiaire       | Search API                 | premium | ★ undocumented, best-effort |
-| Preloved        | Server-HTML scrape         | premium | ★★★ best-effort |
-| FB Marketplace  | Playwright, logged-in      | **off** | ★ fragile, ToS, needs a session |
+| Source          | Method                        | Group     | Status |
+|-----------------|-------------------------------|-----------|--------|
+| eBay            | Official API (free keys)      | local     | hidden until keys set; rock-solid with them |
+| Vinted          | Internal JSON endpoint        | local     | ★★★★ live |
+| Gumtree         | Server-HTML scrape            | local     | ★★★ live |
+| Shpock          | Embedded JSON / HTML          | local     | ★★★ live |
+| Grailed         | Algolia (public keys built in)| local     | ★★★★ live |
+| Superbuy        | Real search API (Taobao agent), bilingual EN/中文 | china | ★★★ live, no account needed |
+| Amazon deals    | Search scrape, discounted-only| discounts | ★ bot-gated; best-effort |
+| AliExpress / DHgate / Alibaba | link-walk scrape | china   | off by default — revive with `CHINA_EXTRA=1` |
+| Depop / StockX / Vestiaire | internal APIs      | retired  | TLS-fingerprint blocked from any plain server — revive via `SOURCES=` |
+| Preloved        | Server-HTML scrape            | retired  | parses empty — revive via `SOURCES=` |
+| CSSbuy          | (new site)                    | retired  | requires login to search |
+| FB Marketplace  | Playwright, logged-in         | **off**  | fragile, ToS, needs a session |
 
 The sources above are the **Local** group (UK resale). `core` is available on
 every plan; the rest unlock on **Elite**. All are genuine second-hand/resale

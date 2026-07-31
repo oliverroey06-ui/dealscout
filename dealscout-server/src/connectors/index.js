@@ -29,15 +29,20 @@ export const CONNECTORS = {
 export function enabledSources(env) {
   const explicit = (env.SOURCES || '').split(',').map(s => s.trim()).filter(Boolean);
   if (explicit.length) return explicit.filter(s => CONNECTORS[s]);
-  // Product default: Local resale (no eBay until API keys exist, no Facebook),
-  // China = the two buying agents, Discounts = Amazon.
-  const on = ['vinted', 'gumtree', 'shpock', 'depop', 'stockx', 'grailed', 'vestiaire', 'preloved',
-    'superbuy', 'cssbuy', 'amazon'];
+  // Product default: only sources that actually deliver.
+  //   Local = Vinted, Gumtree, Shpock, Grailed · China = Superbuy · Discounts = Amazon.
+  // Retired from the default (never returned results from a plain server):
+  //   depop/stockx/vestiaire (TLS-fingerprint blocked), cssbuy (login-walled),
+  //   preloved (parses empty). Any of them can be revived via the SOURCES env.
+  const on = ['vinted', 'gumtree', 'shpock', 'grailed', 'superbuy', 'amazon'];
   if (env.EBAY_CLIENT_ID && env.EBAY_CLIENT_SECRET) on.unshift('ebay');  // returns with free API keys
   if (env.CHINA_EXTRA === '1') on.push('aliexpress', 'dhgate', 'alibaba'); // the direct-ship China trio
   if (env.FACEBOOK_ENABLED === '1') on.push('facebook');
   return on;
 }
+
+// Sources kept in the codebase but off + hidden unless explicitly enabled.
+const RETIRED = ['depop', 'stockx', 'vestiaire', 'preloved', 'cssbuy'];
 
 export function sourceStatus(env) {
   const on = enabledSources(env);
@@ -49,10 +54,11 @@ export function sourceStatus(env) {
       if (hasEbayKeys) { note = 'official API'; kind = 'api'; }
       else { note = 'scrape (add keys for API)'; kind = 'scrape'; hidden = true; } // hidden until keys exist
     }
-    if (id === 'superbuy') note = 'searches Taobao via the Superbuy agent';
+    if (id === 'superbuy') note = 'searches Taobao via Superbuy · knows brands’ Chinese names';
     if (id === 'cssbuy') { ready = false; note = 'CSSbuy’s new site requires login to search'; }
     if (id === 'amazon') note = 'discounted items only · bot-gated, best-effort';
     if (['aliexpress', 'dhgate', 'alibaba'].includes(id) && env.CHINA_EXTRA !== '1') hidden = true; // re-enable with CHINA_EXTRA=1
+    if (RETIRED.includes(id) && !on.includes(id)) hidden = true;   // removed from the product; revive via SOURCES=
     if (group === 'china' && !note) note = 'ships from China · approx GBP';
     if (id === 'facebook' && env.FACEBOOK_ENABLED !== '1') { ready = false; hidden = true; note = 'needs a logged-in browser (local only)'; }
     return { id, label: c.meta.label, kind, group, ready, hidden, note, enabled: on.includes(id) };

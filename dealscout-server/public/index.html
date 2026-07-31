@@ -502,7 +502,7 @@ function renderStatus(j){
     const unreadable=rest.filter(s=>!blocked.includes(s)&&/could not find|markup|not JSON|script-only|no readable/i.test(s.error||''));
     const bits=['<b>'+failed.length+'</b> source'+(failed.length===1?'':'s')+' returned nothing — hover a red tag for each exact reason.'];
     if(ebayNoKeys)bits.push('eBay just needs its free API keys (EBAY_CLIENT_ID / EBAY_CLIENT_SECRET) and then works from any server.');
-    if(blocked.length)bits.push(blocked.length+' refused the request (bot protection): on a hosted server set SCRAPER_PROXY_URL (residential proxy); from a home connection most open up, though StockX / Vestiaire / Depop can resist any plain server fetch.');
+    if(blocked.length)bits.push(blocked.length+' refused the request (bot protection): on a hosted server set SCRAPER_PROXY_URL (residential proxy); from a home connection these usually open up.');
     if(unreadable.length)bits.push(unreadable.length+' responded but the page couldn’t be read server-side (script-only or changed markup).');
     if(needsKeys.length)bits.push('Grailed needs its free Algolia keys (see README).');
     note='<div class="status-note" style="flex-basis:100%;margin-top:7px;font-size:12.5px;color:#64707d;line-height:1.55;max-width:70ch">'+bits.join(' ')+'</div>';

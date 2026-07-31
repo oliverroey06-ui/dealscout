@@ -16,6 +16,7 @@ import { parse as parseAlibaba } from '../src/connectors/alibaba.js';
 import { parse as parseSuperbuy } from '../src/connectors/superbuy.js';
 import { parse as parseCssbuy } from '../src/connectors/cssbuy.js';
 import { parse as parseAmazon } from '../src/connectors/amazon.js';
+import { expandChinaQuery } from '../src/zh.js';
 import { scoreScan, buildBand } from '../src/valuation.js';
 import { normalize, parseMoney, toGBP } from '../src/normalize.js';
 
@@ -199,6 +200,13 @@ test('Alibaba parser takes the low end of the price range', () => {
   assert.ok(near(items[0].price, 1.20 * 0.79), `£${items[0].price}`);
   assert.equal(items[0].seller.name, 'Best Garment Co., Ltd.');
   assert.match(items[0].url, /product-detail/);
+});
+
+test('China query expansion translates official brand + product names', () => {
+  assert.deepEqual(expandChinaQuery('adidas hoodie'), ['adidas hoodie', '阿迪达斯 卫衣']);
+  assert.deepEqual(expandChinaQuery('New Balance trainers'), ['New Balance trainers', '新百伦 运动鞋']);
+  assert.deepEqual(expandChinaQuery('rtx 3080'), ['rtx 3080'], 'unknown terms stay as one query');
+  assert.deepEqual(expandChinaQuery('nike'), ['nike', '耐克']);
 });
 
 test('Superbuy parser maps the real crawler/search-product shape (USD → GBP)', () => {

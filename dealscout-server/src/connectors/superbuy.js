@@ -7,11 +7,28 @@
 
 import { normalize, toGBP } from '../normalize.js';
 import { scrapeFetch } from '../net.js';
+import { expandChinaQuery } from '../zh.js';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36';
 export const meta = { id: 'superbuy', label: 'Superbuy', kind: 'scrape', group: 'china' };
 
+// Search both the English query and its official-Chinese expansion (Taobao
+// stock is mostly Chinese-titled — "adidas" listings live under 阿迪达斯), then
+// merge and dedupe.
 export async function search({ query, limit = 30, env, signal }) {
+  const queries = expandChinaQuery(query);
+  const settled = await Promise.allSettled(queries.map(k => searchOne(k, { limit, env, signal })));
+  const items = settled.filter(s => s.status === 'fulfilled').flatMap(s => s.value);
+  if (!items.length) {
+    const failed = settled.find(s => s.status === 'rejected');
+    if (failed) throw failed.reason;
+  }
+  const seen = new Set();
+  return items.filter(l => !seen.has(l.id) && seen.add(l.id)).slice(0, limit);
+}
+
+async function searchOne(keyword, { limit, env, signal }) {
+  const query = keyword;
   const base = env.SUPERBUY_BASE || 'https://front.superbuy.com';
   const size = String(Math.min(60, limit));
   const body = new URLSearchParams({
@@ -40,7 +57,7 @@ export async function search({ query, limit = 30, env, signal }) {
   if (!out.length && j && j.state !== undefined && j.state !== 0) {
     throw new Error(`Superbuy API refused (state ${j.state}${j.msg ? ': ' + String(j.msg).slice(0, 80) : ''})`);
   }
-  return out.slice(0, limit);
+  return out;
 }
 
 export function parse(json, env = null) {
